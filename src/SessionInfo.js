@@ -96,7 +96,7 @@ class SessionInfo {
    *   - nSubs: a hash of subscriptions count per subscription name
    *   - nDocuments: a hash of document counts per subscription
    */
-  getSessionInfo() {
+  getInfo() {
     for (const session of Object.values(this.sessions)) {
       this.buildSessionInfo(Object.values(session._namedSubs));
     }

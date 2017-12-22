@@ -1,6 +1,7 @@
 import connect from "connect";
 
 import SessionInfo from "./SessionInfo";
+import MongoInfo from "./MongoInfo";
 
 const ServerInfo = class ServerInfo {
   /**
@@ -39,39 +40,13 @@ const ServerInfo = class ServerInfo {
    *   A plain object of metrics by name.
    */
   getConnectionCounts() {
-    const results = {
-      nLiveResultsSets: 0,
-      nObserveHandles: 0,
-      oplogObserveHandlesCount: 0,
-      pollingObserveHandlesCount: 0,
-      oplogObserveHandles: {},
-      pollingObserveHandles: {},
-    };
+    const results = {};
 
     results.sockets = this.getSocketCounts();
     results.sessions = (new SessionInfo(this.meteor.default_server.sessions))
-      .getSessionInfo();
-
-    _.each(this.mongoInternals.defaultRemoteCollectionDriver().mongo._observeMultiplexers, function (muxer) {
-      _.each(muxer._handles, function (handle) {
-        results.nObserveHandles += 1;
-
-        const logStat = function (type, collectionName) {
-          results[type + 'Count'] += 1;
-          results[type][collectionName] = results[type][collectionName] || 0
-          results[type][collectionName] += 1;
-        };
-
-        const driver = handle._observeDriver || muxer._observeDriver;
-        const collectionName = driver._cursorDescription.collectionName;
-        if (driver._usesOplog) {
-          logStat('oplogObserveHandles', collectionName);
-        }
-        else {
-          logStat('pollingObserveHandles', collectionName);
-        }
-      });
-    });
+      .getInfo();
+    results.mongo = (new MongoInfo(this.mongoInternals))
+      .getInfo();
 
     // walk facts
     if (this.facts._factsByPackage) {
