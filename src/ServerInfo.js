@@ -2,6 +2,7 @@ import connect from "connect";
 
 import SessionInfo from "./SessionInfo";
 import MongoInfo from "./MongoInfo";
+import SocketInfo from "./SocketInfo";
 
 const ServerInfo = class ServerInfo {
   /**
@@ -40,53 +41,61 @@ const ServerInfo = class ServerInfo {
    *   A plain object of metrics by name.
    */
   getConnectionCounts() {
-    const results = {};
+    const sources = {
+      'sockets': new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
+      'sessions': new SessionInfo(this.meteor.default_server.sessions),
+      'mongo': new MongoInfo(this.mongoInternals)
+    };
 
-    results.sockets = this.getSocketCounts();
-    results.sessions = (new SessionInfo(this.meteor.default_server.sessions))
-      .getInfo();
-    results.mongo = (new MongoInfo(this.mongoInternals))
-      .getInfo();
+    const results = Object.entries(sources).reduce(this.infoReducer, {});
 
-    // walk facts
-    if (this.facts._factsByPackage) {
-      results.facts = {};
-      _.each(this.facts._factsByPackage, function (facts, pkg) {
-        results.facts[pkg] = facts;
-      });
-    }
+    results.facts = Object.assign({}, this.facts._factsByPackage);
 
     return results;
   }
 
   /**
-   * Check out the connections and what we know about them
+   * Route controller serving the collected info.
    *
-   * @returns {Object}
-   *   - nSockets: the global socket count
-   *   - nSocketsWithLivedataSessions: the number of sockets with live data.
+   * @param {Request} req
+   *   A Connect request.
+   * @param {Response} res
+   *   A Connect response.
+   *
+   * @return {void}
    */
-  getSocketCounts() {
-    const info = {
-      nSockets: 0,
-      nSocketsWithLivedataSessions: 0
-    };
-    _.each(this.meteor.default_server.stream_server.open_sockets, function (socket) {
-      info.nSockets += 1;
-
-      if (socket.meteor_session) {
-        info.nSocketsWithLivedataSessions += 1;
-      }
-    });
-
-    return info;
-  }
-
   handle(req, res) {
     res.setHeader("content-type", "application/json");
     return res.end(JSON.stringify(this.getConnectionCounts()));
   }
 
+  /**
+   * Reducer for getConnectionCounts().
+   *
+   * @param  {{}} accu
+   *   Accumulator.
+   * @param {String} section
+   *   The name of the information section.
+   * @param  {{}} info
+   *   The section information.
+   *
+   * @return {*}
+   *   The updated accumulator.
+   *
+   * @private
+   *
+   * @see ServerInfo.getConnectionCounts()
+   */
+  infoReducer(accu, [section, info]) {
+    accu[section] = info.getInfo();
+    return accu;
+  }
+
+  /**
+   * Register a web route for the module.
+   *
+   * @return {void}
+   */
   register() {
     const { path, user, pass } = this.settings;
     this.connectHandlers
