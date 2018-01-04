@@ -61,6 +61,30 @@ class MongoInfo {
   }
 
   /**
+   * Describe the metrics provided by this service.
+   *
+   * @return {{
+   *   nObserveHandles: {type: string, label: string},
+   *   oplogObserveHandles: {type: string, label: string},
+   *   oplogObserveHandlesCount: {type: string, label: string},
+   *   pollingObserveHandles: {type: string, label: string},
+   *   pollingObserveHandlesCount: {type: string, label: string}
+   * }}
+   *   The description.
+   */
+  static getDescription() {
+    const description = {
+      nObserveHandles:            { type: 'integer', label: 'Overall observers count' },
+      oplogObserveHandles:        { type: 'array',   label: 'List of oplog-based observers' },
+      oplogObserveHandlesCount:   { type: 'integer', label: 'Count of oplog-based observers' },
+      pollingObserveHandles:      { type: 'array',   label: 'List of polling-based observers' },
+      pollingObserveHandlesCount: { type: 'integer', label: 'Count of polling-based observers' },
+    };
+
+    return description;
+  }
+
+  /**
    * Get MongoDB-level information.
    *
    * @returns {*}

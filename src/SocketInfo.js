@@ -17,6 +17,25 @@ class SocketInfo {
     };
     this.sockets = sockets;
   }
+
+  /**
+   * Describe the metrics provided by this service.
+   *
+   * @return {{
+   *   nSockets: {type: string, label: string},
+   *   nSocketsWithLivedataSessions: {type: string, label: string},
+   * }}
+   *  The description.
+   */
+  static getDescription() {
+    const description = {
+      nSockets:                     { type: 'integer', label: 'Count of open sockets' },
+      nSocketsWithLivedataSessions: { type: 'integer', label: 'Count of sockets with live data' },
+    };
+
+    return description;
+  }
+
   /**
    * Check out the connections and what we know about them
    *

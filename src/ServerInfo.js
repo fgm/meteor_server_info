@@ -55,6 +55,26 @@ const ServerInfo = class ServerInfo {
   }
 
   /**
+   * Collect the descriptions provided for the metrics.
+   *
+   * @return {{
+   * sockets: {},
+   * sessions: {},
+   * mongo: {}
+   * }}
+   *   The descriptions
+   */
+  static getDescriptions() {
+    const descriptions = {
+      'sockets': SocketInfo.getDescription(),
+      'sessions': SessionInfo.getDescription(),
+      'mongo': MongoInfo.getDescription()
+    };
+
+    return descriptions;
+  }
+
+  /**
    * Route controller serving the collected info.
    *
    * @param {Request} req
@@ -67,6 +87,11 @@ const ServerInfo = class ServerInfo {
   handle(req, res) {
     res.setHeader("content-type", "application/json");
     return res.end(JSON.stringify(this.getConnectionCounts()));
+  }
+
+  handleDescription(req, res) {
+    res.setHeader("content-type", "application/json");
+    return res.end(JSON.stringify(ServerInfo.getDescriptions()));
   }
 
   /**
@@ -98,6 +123,8 @@ const ServerInfo = class ServerInfo {
    */
   register() {
     const { path, user, pass } = this.settings;
+    this.connectHandlers
+      .use(path + '/doc', this.handleDescription.bind(this));
     this.connectHandlers
       .use(path, this.connect.basicAuth(user, pass))
       .use(path, this.handle.bind(this));

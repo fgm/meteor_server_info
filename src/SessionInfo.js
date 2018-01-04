@@ -88,6 +88,28 @@ class SessionInfo {
   }
 
   /**
+   * Describe the metrics provided by this service.
+   *
+   * @return {{
+   *   nDocuments: {type: string, label: string},
+   *   nSessions: {type: string, label: string},
+   *   nSubs: {type: string, label: string},
+   *   usersWithNSubscriptions: {type: string, label: string}
+   * }}
+   *  The description.
+   */
+  static getDescription() {
+    const description = {
+      nDocuments:                 { type: 'array',   label: 'Array of arrays of documents per subscription' },
+      nSessions:                  { type: 'int',     label: 'Count of sessions' },
+      nSubs:                      { type: 'array',   label: 'Array of subscriptions per session' },
+      usersWithNSubscriptions:    { type: 'array',   label: 'Array of user counts per subscription count' }
+    };
+
+    return description;
+  }
+
+  /**
    * Get session information.
    *
    * @returns {Object}
