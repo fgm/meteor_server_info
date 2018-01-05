@@ -63,3 +63,13 @@ following server keys:
 As the original [percolate:server-info] package was licensed under the 
 permissive MIT license, this derivative work has been relicensed under the
 General Public License version 3 or later (SPDX: GPL-3.0+).  
+
+## Changelog
+
+* 1.0.1
+  * added an explicit dev dependency on marked 0.3.9 to work around 
+    https://github.com/jsdoc3/jsdoc/issues/1489 - can be removed once jsdoc
+    updates its dependency to that level.
+  * updated JsDoc to 3.5.5
+  * fixed JsDoc configuration so that npm run doc actually works
+* 1.0.0: initial version

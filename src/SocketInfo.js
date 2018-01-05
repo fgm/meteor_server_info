@@ -23,7 +23,7 @@ class SocketInfo {
    *
    * @return {{
    *   nSockets: {type: string, label: string},
-   *   nSocketsWithLivedataSessions: {type: string, label: string},
+   *   nSocketsWithLivedataSessions: {type: string, label: string}
    * }}
    *  The description.
    */
