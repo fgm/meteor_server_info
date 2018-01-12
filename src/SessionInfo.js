@@ -100,10 +100,10 @@ class SessionInfo {
    */
   static getDescription() {
     const description = {
-      nDocuments:                 { type: 'array',   label: 'Array of arrays of documents per subscription' },
-      nSessions:                  { type: 'int',     label: 'Count of sessions' },
-      nSubs:                      { type: 'array',   label: 'Array of subscriptions per session' },
-      usersWithNSubscriptions:    { type: 'array',   label: 'Array of user counts per subscription count' }
+      nDocuments:                 { type: 'array',   label: 'Documents per subscription[][]' },
+      nSessions:                  { type: 'int',     label: 'Sessions' },
+      nSubs:                      { type: 'array',   label: 'Subscriptions per session[]' },
+      usersWithNSubscriptions:    { type: 'array',   label: 'User counts per subscription count[]' }
     };
 
     return description;

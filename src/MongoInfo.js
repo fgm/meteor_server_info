@@ -75,10 +75,10 @@ class MongoInfo {
   static getDescription() {
     const description = {
       nObserveHandles:            { type: 'integer', label: 'Overall observers count' },
-      oplogObserveHandles:        { type: 'array',   label: 'List of oplog-based observers' },
-      oplogObserveHandlesCount:   { type: 'integer', label: 'Count of oplog-based observers' },
-      pollingObserveHandles:      { type: 'array',   label: 'List of polling-based observers' },
-      pollingObserveHandlesCount: { type: 'integer', label: 'Count of polling-based observers' },
+      oplogObserveHandles:        { type: 'array',   label: 'Oplog-based observers[]' },
+      oplogObserveHandlesCount:   { type: 'integer', label: 'Oplog-based observers' },
+      pollingObserveHandles:      { type: 'array',   label: 'Polling-based observers[]' },
+      pollingObserveHandlesCount: { type: 'integer', label: 'Polling-based observers' },
     };
 
     return description;

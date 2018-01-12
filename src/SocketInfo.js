@@ -29,15 +29,15 @@ class SocketInfo {
    */
   static getDescription() {
     const description = {
-      nSockets:                     { type: 'integer', label: 'Count of open sockets' },
-      nSocketsWithLivedataSessions: { type: 'integer', label: 'Count of sockets with live data' },
+      nSockets:                     { type: 'integer', label: 'Open sockets' },
+      nSocketsWithLivedataSessions: { type: 'integer', label: 'Sockets with session' },
     };
 
     return description;
   }
 
   /**
-   * Check out the connections and what we know about them
+   * Check out the connections and what we know about them.
    *
    * @returns {Object}
    *   - nSockets: the global socket count
@@ -47,7 +47,8 @@ class SocketInfo {
     for (const socket of this.sockets) {
       this.info.nSockets += 1;
 
-      if (socket.meteor_session) {
+      // Name apparently changed across Meteor versions.
+      if (socket._meteorSession || socket.meteor_session) {
         this.info.nSocketsWithLivedataSessions += 1;
       }
     }
