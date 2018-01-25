@@ -1,8 +1,6 @@
 {
   "author": "FGM",
-  "dependencies": {
-    "connect": "^2.9"
-  },
+  "dependencies": {},
   "devDependencies": {
     "babel-cli": "^6.24.0",
     "babel-core": "^6.24.0",

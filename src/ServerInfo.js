@@ -1,5 +1,3 @@
-import connect from "connect";
-
 import SessionInfo from "./SessionInfo";
 import MongoInfo from "./MongoInfo";
 import SocketInfo from "./SocketInfo";
@@ -25,7 +23,6 @@ const ServerInfo = class ServerInfo {
       user: "insecure",
       pass: "secureme"
     };
-    this.connect = connect;
     this.connectHandlers = WebApp.connectHandlers;
     this.facts = Facts;
     // We only use its default_server key, but we keep the whole Meteor object
@@ -119,15 +116,23 @@ const ServerInfo = class ServerInfo {
   /**
    * Register a web route for the module.
    *
+   * @param {Function} basicAuth
+   *   Optional. Pass the connect.basicAuth middleware from Connect 2.x here to
+   *   apply basic authentication to the info path using the user/pass from
+   *   settings.json. If this middleware is not passed, the info route will be
+   *   public, and assume it is protected by other means.
+   *
    * @return {void}
    */
-  register() {
+  register(basicAuth) {
     const { path, user, pass } = this.settings;
     this.connectHandlers
       .use(path + '/doc', this.handleDescription.bind(this));
-    this.connectHandlers
-      .use(path, this.connect.basicAuth(user, pass))
-      .use(path, this.handle.bind(this));
+
+    if (typeof basicAuth !== 'undefined') {
+      this.connectHandlers.use(path, this.connect.basicAuth(user, pass));
+    }
+    this.connectHandlers.use(path, this.handle.bind(this));
   }
 };
 
