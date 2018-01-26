@@ -124,12 +124,12 @@ const ServerInfo = class ServerInfo {
    *
    * @return {void}
    */
-  register(basicAuth) {
+  register(basicAuth = null) {
     const { path, user, pass } = this.settings;
     this.connectHandlers
       .use(path + '/doc', this.handleDescription.bind(this));
 
-    if (typeof basicAuth !== 'undefined') {
+    if (basicAuth !== null) {
       this.connectHandlers.use(path, this.connect.basicAuth(user, pass));
     }
     this.connectHandlers.use(path, this.handle.bind(this));
