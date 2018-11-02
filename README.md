@@ -7,27 +7,23 @@
 
 ## Usage
 
-Once installed and configured, the package provides an information route 
-available with HTTP Basic authentication, by default on `/serverInfo`, like the
-following one:
+Once installed and configured, the package provides 
+
+- a public metrics documentation route, available by default on 
+  `/serverInfo/doc` where all exposed metrics are documented
+- a metrics values route available with HTTP Basic authentication, by 
+  default on `/serverInfo`, like the following one:
 
 ![screenshot]
 
 
 ## Installation
 
-- Like the original version, this project needs the MDG [Facts] package. So from the
-project directory, type:
+- Like the original version, this project needs the MDG [Facts] package, but not
+the `facts-ui`package. So from the project directory, add both dependencies:
   ```bash
   meteor add facts
-  ```
-- Then install the package using NPM or Yarn. Since the project is not currently
-  published on NPM, clone it locally to the project `imports`:
-  ```bash
-  cd imports
-  git clone https://github.com/FGM/meteor_server_info.git meteor_server_info
-  cd .. 
-  meteor yarn add facts:@file:./imports/meteor_server_info
+  meteor yarn add meteor_server_info
   ```
 - Then, in the main JS file of the server part of the application, add code to
   initialize the package: 
@@ -41,6 +37,7 @@ project directory, type:
     ```
 - Edit the Meteor settings, at least to change the user and password.
 - Run your application normally
+
 
 ## Configuration
 
@@ -58,14 +55,24 @@ following server keys:
 [screenshot]: screenshot-todos.png
 
 
+## Usage note
+
+Metrics exposed by the module can easily be imported to Grafana using the `http`
+plugin. Be sure to import data from all your Meteor server instances, since
+metrics are per-instance, not per-database.
+ 
+
 ## License
 
 As the original [percolate:server-info] package was licensed under the 
 permissive MIT license, this derivative work has been relicensed under the
 General Public License version 3 or later (SPDX: GPL-3.0+).  
 
+
 ## Changelog
 
+* 1.1.2
+  * updated documentation
 * 1.1.1
   * include RAM / CPU metrics
 * 1.0.1
