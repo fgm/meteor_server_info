@@ -12,8 +12,8 @@ class SocketInfo {
    */
   constructor(sockets) {
     this.info = {
-      nSockets: 0,
-      nSocketsWithLivedataSessions: 0
+      nSockets:                     0,
+      nSocketsWithLivedataSessions: 0,
     };
     this.sockets = sockets;
   }
@@ -29,8 +29,8 @@ class SocketInfo {
    */
   static getDescription() {
     const description = {
-      nSockets:                     { type: 'integer', label: 'Open sockets' },
-      nSocketsWithLivedataSessions: { type: 'integer', label: 'Sockets with session' },
+      nSockets:                     { type: "integer", label: "Open sockets" },
+      nSocketsWithLivedataSessions: { type: "integer", label: "Sockets with session" },
     };
 
     return description;

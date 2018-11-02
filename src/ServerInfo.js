@@ -1,5 +1,8 @@
+import "process";
+
 import SessionInfo from "./SessionInfo";
 import MongoInfo from "./MongoInfo";
+import NodeInfo from "./NodeInfo";
 import SocketInfo from "./SocketInfo";
 
 const ServerInfo = class ServerInfo {
@@ -21,7 +24,7 @@ const ServerInfo = class ServerInfo {
     this.settings = Meteor.settings.serverInfo || {
       path: "/serverInfo",
       user: "insecure",
-      pass: "secureme"
+      pass: "secureme",
     };
     this.connectHandlers = WebApp.connectHandlers;
     this.facts = Facts;
@@ -29,19 +32,23 @@ const ServerInfo = class ServerInfo {
     // in case the default_server key might change.
     this.meteor = Meteor;
     this.mongoInternals = MongoInternals;
+    this.store = {
+      "process": {},
+    };
   }
 
   /**
-   * Collect the counters from Meteor structures.
+   * Collect the information from Meteor structures.
    *
    * @returns {{}}
    *   A plain object of metrics by name.
    */
-  getConnectionCounts() {
+  getInformation() {
     const sources = {
-      'sockets': new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
-      'sessions': new SessionInfo(this.meteor.default_server.sessions),
-      'mongo': new MongoInfo(this.mongoInternals)
+      "sockets":  new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
+      "sessions": new SessionInfo(this.meteor.default_server.sessions),
+      "mongo":    new MongoInfo(this.mongoInternals),
+      "process":  new NodeInfo(process, this.store.process),
     };
 
     const results = Object.entries(sources).reduce(this.infoReducer, {});
@@ -63,9 +70,10 @@ const ServerInfo = class ServerInfo {
    */
   static getDescriptions() {
     const descriptions = {
-      'sockets': SocketInfo.getDescription(),
-      'sessions': SessionInfo.getDescription(),
-      'mongo': MongoInfo.getDescription()
+      "sockets":  SocketInfo.getDescription(),
+      "sessions": SessionInfo.getDescription(),
+      "mongo":    MongoInfo.getDescription(),
+      "process":  NodeInfo.getDescription(),
     };
 
     return descriptions;
@@ -83,7 +91,7 @@ const ServerInfo = class ServerInfo {
    */
   handle(req, res) {
     res.setHeader("content-type", "application/json");
-    return res.end(JSON.stringify(this.getConnectionCounts()));
+    return res.end(JSON.stringify(this.getInformation()));
   }
 
   handleDescription(req, res) {
@@ -92,7 +100,7 @@ const ServerInfo = class ServerInfo {
   }
 
   /**
-   * Reducer for getConnectionCounts().
+   * Reducer for getInformation().
    *
    * @param  {{}} accu
    *   Accumulator.
@@ -106,7 +114,7 @@ const ServerInfo = class ServerInfo {
    *
    * @private
    *
-   * @see ServerInfo.getConnectionCounts()
+   * @see ServerInfo.getInformation()
    */
   infoReducer(accu, [section, info]) {
     accu[section] = info.getInfo();
@@ -127,7 +135,7 @@ const ServerInfo = class ServerInfo {
   register(basicAuth = null) {
     const { path, user, pass } = this.settings;
     this.connectHandlers
-      .use(path + '/doc', this.handleDescription.bind(this));
+      .use(path + "/doc", this.handleDescription.bind(this));
 
     if (basicAuth !== null) {
       this.connectHandlers.use(path, this.connect.basicAuth(user, pass));

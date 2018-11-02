@@ -12,11 +12,11 @@ class MongoInfo {
    */
   constructor(MongoInternals) {
     this.info = {
-      nObserveHandles: 0,
-      oplogObserveHandles: {},
-      oplogObserveHandlesCount: 0,
-      pollingObserveHandles: {},
-      pollingObserveHandlesCount: 0
+      nObserveHandles:            0,
+      oplogObserveHandles:        {},
+      oplogObserveHandlesCount:   0,
+      pollingObserveHandles:      {},
+      pollingObserveHandlesCount: 0,
     };
     this.muxes = MongoInternals.defaultRemoteCollectionDriver().mongo._observeMultiplexers;
   }
@@ -74,11 +74,11 @@ class MongoInfo {
    */
   static getDescription() {
     const description = {
-      nObserveHandles:            { type: 'integer', label: 'Overall observers count' },
-      oplogObserveHandles:        { type: 'array',   label: 'Oplog-based observers[]' },
-      oplogObserveHandlesCount:   { type: 'integer', label: 'Oplog-based observers' },
-      pollingObserveHandles:      { type: 'array',   label: 'Polling-based observers[]' },
-      pollingObserveHandlesCount: { type: 'integer', label: 'Polling-based observers' },
+      nObserveHandles:            { type: "integer", label: "Overall observers count" },
+      oplogObserveHandles:        { type: "array", label: "Oplog-based observers[]" },
+      oplogObserveHandlesCount:   { type: "integer", label: "Oplog-based observers" },
+      pollingObserveHandles:      { type: "array", label: "Polling-based observers[]" },
+      pollingObserveHandlesCount: { type: "integer", label: "Polling-based observers" },
     };
 
     return description;

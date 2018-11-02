@@ -10,10 +10,10 @@ class SessionInfo {
    */
   constructor(sessions) {
     this.info = {
-      nDocuments: {},
-      nSessions: 0,
-      nSubs: {},
-      usersWithNSubscriptions: {}
+      nDocuments:              {},
+      nSessions:               0,
+      nSubs:                   {},
+      usersWithNSubscriptions: {},
     };
     this.sessions = sessions;
   }
@@ -100,10 +100,10 @@ class SessionInfo {
    */
   static getDescription() {
     const description = {
-      nDocuments:                 { type: 'array',   label: 'Documents per subscription[][]' },
-      nSessions:                  { type: 'int',     label: 'Sessions' },
-      nSubs:                      { type: 'array',   label: 'Subscriptions per session[]' },
-      usersWithNSubscriptions:    { type: 'array',   label: 'User counts per subscription count[]' }
+      nDocuments:              { type: "array", label: "Documents per subscription[][]" },
+      nSessions:               { type: "int", label: "Sessions" },
+      nSubs:                   { type: "array", label: "Subscriptions per session[]" },
+      usersWithNSubscriptions: { type: "array", label: "User counts per subscription count[]" },
     };
 
     return description;

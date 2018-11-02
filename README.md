@@ -66,6 +66,8 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 ## Changelog
 
+* 1.1.1
+  * include RAM / CPU metrics
 * 1.0.1
   * added an explicit dev dependency on marked 0.3.9 to work around 
     https://github.com/jsdoc3/jsdoc/issues/1489 - can be removed once jsdoc
