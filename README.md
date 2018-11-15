@@ -1,7 +1,7 @@
 # Meteor server info
 
 - A NPM version (derivative work) of [percolate:server-info]
-- Rewritten in ES6 for Meteor 1.6+
+- Rewritten in TypeScript 3 for Meteor 1.6-1.8
 - Without the AWS-specific and extra sections, not relevant for most usages.
 
 

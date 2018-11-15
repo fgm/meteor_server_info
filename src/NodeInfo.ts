@@ -1,18 +1,40 @@
+import "process";
+import {IInfoData} from "./ServerInfo";
+
+interface NodeInfoData extends IInfoData {
+  cpuUser:      number,
+  cpuSystem:    number,
+  ramExternal:  number,
+  ramHeapTotal: number,
+  ramHeapUsed:  number,
+  ramRss:       number,
+}
+
+/**
+ * An off-instance structure to preserve information between instance creations.
+ */
+interface NodeInfoStore {
+  latestCpu: any,
+  latestPoll: number,
+}
+
 /**
  * Provides the Node.JS-related information: RAM, CPU load.
  */
 class NodeInfo {
+  public info: NodeInfoData;
+  public process: typeof process;
+
   /**
-   * @param {Process} process
+   * @param process
    *   The NodeJS process module or a stub for it.
-   * @param {object} store
+   * @param store
    *   An object in which to store information between instance creations.
    *
    * @constructor
    */
-  constructor(process, store) {
-    this.process = process;
-    this.store = store;
+  constructor(p: typeof process, public store: NodeInfoStore) {
+    this.process = p;
 
     this.info = {
       cpuUser:      0,
@@ -91,10 +113,10 @@ class NodeInfo {
    *   - cpuSystem
    *   - cpuUser
    */
-  getInfo() {
+  getInfo(): NodeInfoData {
     const ram = this.process.memoryUsage();
     const cpu = this.pollCpuUsage();
-    const result = {
+    const result: NodeInfoData = {
       cpuUser:      cpu.user,
       cpuSystem:    cpu.system,
       ramExternal:  ram.external,
@@ -106,4 +128,8 @@ class NodeInfo {
   }
 }
 
-export default NodeInfo;
+export {
+  NodeInfo,
+  NodeInfoData,
+  NodeInfoStore,
+};

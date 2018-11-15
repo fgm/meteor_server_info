@@ -1,19 +1,31 @@
+import {Counter, IInfoData} from "./ServerInfo";
+import {Session} from "meteor/session";
+
+interface SessionInfoData extends IInfoData {
+  nDocuments: Counter,
+  nSessions: number,
+  nSubs: Counter,
+  usersWithNSubscriptions: Counter,
+}
+
 /**
  * Provides the session-related information: sessions, subscriptions, documents.
  */
 class SessionInfo {
+  public info: SessionInfoData;
+
   /**
-   * @param {Object} sessions
+   * @param sessions
    *   The private structure held by Meteor for its sessions list.
    *
    * @constructor
    */
-  constructor(sessions) {
+  constructor(public sessions: (typeof Session)[]) {
     this.info = {
-      nDocuments:              {},
+      nDocuments:              new Map(),
       nSessions:               0,
-      nSubs:                   {},
-      usersWithNSubscriptions: {},
+      nSubs:                   new Map(),
+      usersWithNSubscriptions: new Map(),
     };
     this.sessions = sessions;
   }
@@ -21,33 +33,28 @@ class SessionInfo {
   /**
    * Ensure initialization of a counter. Do not modify it if alreay set.
    *
-   * @param {Object} part
+   * @param part
    *   The container for the counter.
-   * @param {Number|String} key
+   * @param key
    *   The counter name.
-   *
-   * @returns {void}
-   *
-   * @private
    */
-  initKey(part, key) {
-    part[key] = part[key] || 0;
+  protected initKey(part: Counter, key: number|string): void {
+    if (!part.has(key)) {
+      part.set(key, 0);
+    }
   }
 
   /**
    * Build the document information for a subscription into this.info.
    *
-   * @param {Object} documents
+   * @param documents
    *   The private structure held by Meteor for the documents of a subscription.
-   *
-   * @returns {void}
-   *
-   * @private
    */
-  _buildDocumentCountsPerSubscription(documents) {
+  protected _buildDocumentCountsPerSubscription(documents: any[]): void {
     for (const [type, document] of Object.entries(documents)) {
       this.initKey(this.info.nDocuments, type);
-      this.info.nDocuments[type] += Object.keys(document).length;
+      // get() is guaranteed to be defined because we just did initKey().
+      this.info.nDocuments.set(type, this.info.nDocuments.get(type)! + Object.keys(document).length);
     }
   }
 
@@ -56,15 +63,12 @@ class SessionInfo {
    *
    * @param {Array} subscriptions
    *   The private structure held by Meteor for a subscription within a session.
-   *
-   * @returns {void}
-   *
-   * @private
    */
-  buildSubscriptionInfoPerSession(subscriptions) {
+  protected buildSubscriptionInfoPerSession(subscriptions: any[]): void {
     for (const subscription of subscriptions) {
       this.initKey(this.info.nSubs, subscription._name);
-      this.info.nSubs[subscription._name] += 1;
+      // get() is guaranteed to be defined because we just did initKey().
+      this.info.nSubs.set(subscription._name, this.info.nSubs.get(subscription._name)! + 1);
       this._buildDocumentCountsPerSubscription(subscription._documents);
     }
   }
@@ -74,31 +78,19 @@ class SessionInfo {
    *
    * @param {Array} subscriptions
    *   The private structure held by Meteor for the subscriptions of a session.
-   *
-   * @returns {void}
-   *
-   * @private
    */
-  buildSessionInfo(subscriptions) {
+  protected buildSessionInfo(subscriptions: any[]): void {
     this.info.nSessions += 1;
     const subCount = subscriptions.length;
     this.initKey(this.info.usersWithNSubscriptions, subCount);
-    this.info.usersWithNSubscriptions[subCount] += 1;
+    this.info.usersWithNSubscriptions.set(subCount, this.info.usersWithNSubscriptions.get(subCount)! + 1);
     this.buildSubscriptionInfoPerSession(subscriptions);
   }
 
   /**
    * Describe the metrics provided by this service.
-   *
-   * @return {{
-   *   nDocuments: {type: string, label: string},
-   *   nSessions: {type: string, label: string},
-   *   nSubs: {type: string, label: string},
-   *   usersWithNSubscriptions: {type: string, label: string}
-   * }}
-   *  The description.
    */
-  static getDescription() {
+  public static getDescription() {
     const description = {
       nDocuments:              { type: "array", label: "Documents per subscription[][]" },
       nSessions:               { type: "int", label: "Sessions" },
@@ -112,15 +104,16 @@ class SessionInfo {
   /**
    * Get session information.
    *
-   * @returns {Object}
+   * @returns
    *   - nSessions: the overall number of sessions
-   *   - usersWithNSubscriptions: a hash of the users count per number of subs.
-   *   - nSubs: a hash of subscriptions count per subscription name
-   *   - nDocuments: a hash of document counts per subscription
+   *   - usersWithNSubscriptions: a Counter of the users count per number of subs.
+   *   - nSubs: a Counter of subscriptions count per subscription name
+   *   - nDocuments: a Counter of document counts per subscription
    */
-  getInfo() {
+  getInfo(): SessionInfoData {
     for (const session of Object.values(this.sessions)) {
-      this.buildSessionInfo(Object.values(session._namedSubs));
+      const session2 = session as unknown as { _namedSubs: any };
+      this.buildSessionInfo(Object.values(session2._namedSubs));
     }
 
     return this.info;

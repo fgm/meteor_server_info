@@ -1,7 +1,25 @@
+import {Counter, IInfoData, IInfoSection} from "./ServerInfo";
+
+interface MongoInfoData extends IInfoData {
+  nObserveHandles:            number,
+  oplogObserveHandles:        Counter,
+  oplogObserveHandlesCount:   number,
+  pollingObserveHandles:      Counter,
+  pollingObserveHandlesCount: number,
+}
+
+interface observerHandle {
+  _observeDriver?: any,
+  _multiplexer: any,
+}
+
 /**
  * Provides the MongoDB-related information: observers and observed collections.
  */
-class MongoInfo {
+class MongoInfo implements IInfoSection {
+  public info: MongoInfoData;
+  public muxes: any;
+
   /**
    * Constructor.
    *
@@ -10,12 +28,12 @@ class MongoInfo {
    *
    * @constructor
    */
-  constructor(MongoInternals) {
+  constructor(MongoInternals: any) {
     this.info = {
       nObserveHandles:            0,
-      oplogObserveHandles:        {},
+      oplogObserveHandles:        new Map(),
       oplogObserveHandlesCount:   0,
-      pollingObserveHandles:      {},
+      pollingObserveHandles:      new Map(),
       pollingObserveHandlesCount: 0,
     };
     this.muxes = MongoInternals.defaultRemoteCollectionDriver().mongo._observeMultiplexers;
@@ -33,10 +51,22 @@ class MongoInfo {
    *
    * @private
    */
-  buildCollectionInfo(type, collectionName) {
-    this.info[type + "Count"] += 1;
-    this.info[type][collectionName] = this.info[type][collectionName] || 0;
-    this.info[type][collectionName] += 1;
+  buildCollectionInfo(type: "pollingObserveHandles"|"oplogObserveHandles", collectionName: string) {
+    switch (type) {
+      case "pollingObserveHandles":
+        this.info.pollingObserveHandlesCount++;
+        break;
+      case "oplogObserveHandles":
+        this.info.oplogObserveHandlesCount++;
+        break;
+    }
+
+    if (!this.info[type].has(collectionName)) {
+      this.info[type].set(collectionName, 0);
+    }
+    this.info[type].set(collectionName,
+      // Counter was defined in constructor, collection in previous line.
+      this.info[type]!.get(collectionName)! + 1);
   }
 
   /**
@@ -49,7 +79,7 @@ class MongoInfo {
    *
    * @private
    */
-  buildHandleInfo(handle) {
+  buildHandleInfo(handle: observerHandle) {
     this.info.nObserveHandles += 1;
 
     // TODO check whether handle._observeDriver can actually occur.
@@ -94,9 +124,10 @@ class MongoInfo {
    *   - pollingObserveHandles hash: count of polling observers by collection
    *   - pollingObserveHandlesCount: the total count of polling observers.
    */
-  getInfo() {
+  getInfo(): MongoInfoData {
     for (const mux of Object.values(this.muxes)) {
-      for (const handle of Object.values(mux._handles)) {
+      const mux2 = mux as { _handles: { [key: string]: observerHandle }} ;
+      for (const handle of Object.values(mux2._handles)) {
         this.buildHandleInfo(handle);
       }
     }

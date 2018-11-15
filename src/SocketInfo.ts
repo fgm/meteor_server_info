@@ -1,7 +1,16 @@
+import {IInfoData} from "./ServerInfo";
+
+interface SocketInfoData extends IInfoData {
+  nSockets: number,
+  nSocketsWithLivedataSessions: number,
+}
+
 /**
  * Provides the socket-level information.
  */
 class SocketInfo {
+  public info: SocketInfoData;
+
   /**
    * Constructor.
    *
@@ -10,7 +19,7 @@ class SocketInfo {
    *
    * @constructor
    */
-  constructor(sockets) {
+  constructor(public sockets: any[]) {
     this.info = {
       nSockets:                     0,
       nSocketsWithLivedataSessions: 0,
@@ -39,11 +48,11 @@ class SocketInfo {
   /**
    * Check out the connections and what we know about them.
    *
-   * @returns {Object}
+   * @returns
    *   - nSockets: the global socket count
    *   - nSocketsWithLivedataSessions: the number of sockets with live data.
    */
-  getInfo() {
+  getInfo(): SocketInfoData {
     for (const socket of this.sockets) {
       this.info.nSockets += 1;
 
@@ -57,4 +66,7 @@ class SocketInfo {
   }
 }
 
-export default SocketInfo;
+export {
+  SocketInfo,
+  SocketInfoData,
+};
