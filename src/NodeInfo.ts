@@ -1,9 +1,9 @@
 import "process";
 import {IInfoData} from "./ServerInfo";
 
-interface NodeInfoData extends IInfoData {
-  cpuUser:      number,
+interface INodeInfoData extends IInfoData {
   cpuSystem:    number,
+  cpuUser:      number,
   ramExternal:  number,
   ramHeapTotal: number,
   ramHeapUsed:  number,
@@ -13,7 +13,7 @@ interface NodeInfoData extends IInfoData {
 /**
  * An off-instance structure to preserve information between instance creations.
  */
-interface NodeInfoStore {
+interface INodeInfoStore {
   latestCpu: any,
   latestPoll: number,
 }
@@ -22,7 +22,34 @@ interface NodeInfoStore {
  * Provides the Node.JS-related information: RAM, CPU load.
  */
 class NodeInfo {
-  public info: NodeInfoData;
+  /**
+   * Describe the metrics provided by this service.
+   *
+   * @return {{
+   *   nDocuments: {type: string, label: string},
+   *   nSessions: {type: string, label: string},
+   *   nSubs: {type: string, label: string},
+   *   usersWithNSubscriptions: {type: string, label: string}
+   * }}
+   *  The description.
+   */
+  public static getDescription() {
+    const description = {
+      cpuSystem:    { type: "int", label: "CPU system seconds since last sample. May be > 1 on multiple cores." },
+      cpuUser:      { type: "int", label: "CPU user seconds since last sample. May be > 1 on multiple cores." },
+      ramExternal:  { type: "int", label: "C++ memory bound to V8 JS objects" },
+      ramHeapTotal: { type: "int", label: "V8 Total heap" },
+      ramHeapUsed:  { type: "int", label: "V8 Used heap" },
+      ramRss:       {
+        label: "Resident Set Size (heap, code segment, stack)",
+        type:  "int",
+      },
+    };
+
+    return description;
+  }
+
+  public info: INodeInfoData;
   public process: typeof process;
 
   /**
@@ -33,12 +60,12 @@ class NodeInfo {
    *
    * @constructor
    */
-  constructor(p: typeof process, public store: NodeInfoStore) {
+  constructor(p: typeof process, public store: INodeInfoStore) {
     this.process = p;
 
     this.info = {
-      cpuUser:      0,
       cpuSystem:    0,
+      cpuUser:      0,
       ramExternal:  0,
       ramHeapTotal: 0,
       ramHeapUsed:  0,
@@ -54,7 +81,7 @@ class NodeInfo {
    * @returns {{user: number, system: number}}
    *   The normalized time spent since last polling.
    */
-  pollCpuUsage() {
+  public pollCpuUsage() {
     // Date is in msec, cpuUsage is in µsec.
     const ts1 = +new Date() * 1E3;
     const ts0 = this.store.latestPoll || 0;
@@ -69,56 +96,29 @@ class NodeInfo {
     this.store.latestCpu = reading1;
 
     const result = {
-      user:   (reading1.user - reading0.user) / tsDiff,
       system: (reading1.system - reading0.system) / tsDiff,
+      user:   (reading1.user - reading0.user) / tsDiff,
     };
     return result;
-  }
-
-  /**
-   * Describe the metrics provided by this service.
-   *
-   * @return {{
-   *   nDocuments: {type: string, label: string},
-   *   nSessions: {type: string, label: string},
-   *   nSubs: {type: string, label: string},
-   *   usersWithNSubscriptions: {type: string, label: string}
-   * }}
-   *  The description.
-   */
-  static getDescription() {
-    const description = {
-      cpuUser:      { type: "int", label: "CPU user seconds since last sample. May be > 1 on multiple cores." },
-      cpuSystem:    { type: "int", label: "CPU system seconds since last sample. May be > 1 on multiple cores." },
-      ramExternal:  { type: "int", label: "C++ memory bound to V8 JS objects" },
-      ramHeapTotal: { type: "int", label: "V8 Total heap" },
-      ramHeapUsed:  { type: "int", label: "V8 Used heap" },
-      ramRss:       {
-        type:  "int",
-        label: "Resident Set Size (heap, code segment, stack)",
-      },
-    };
-
-    return description;
   }
 
   /**
    * Get session information.
    *
    * @returns {Object}
-   *   - ramRss
-   *   - ramHeapTotal
-   *   - ramHeapUsed
-   *   - ramExternal
    *   - cpuSystem
    *   - cpuUser
+   *   - ramExternal
+   *   - ramHeapTotal
+   *   - ramHeapUsed
+   *   - ramRss
    */
-  getInfo(): NodeInfoData {
+  public getInfo(): INodeInfoData {
     const ram = this.process.memoryUsage();
     const cpu = this.pollCpuUsage();
-    const result: NodeInfoData = {
-      cpuUser:      cpu.user,
+    const result: INodeInfoData = {
       cpuSystem:    cpu.system,
+      cpuUser:      cpu.user,
       ramExternal:  ram.external,
       ramHeapTotal: ram.heapTotal,
       ramHeapUsed:  ram.heapUsed,
@@ -130,6 +130,6 @@ class NodeInfo {
 
 export {
   NodeInfo,
-  NodeInfoData,
-  NodeInfoStore,
+  INodeInfoData,
+  INodeInfoStore,
 };

@@ -1,6 +1,6 @@
 import {IInfoData} from "./ServerInfo";
 
-interface SocketInfoData extends IInfoData {
+interface ISocketInfoData extends IInfoData {
   nSockets: number,
   nSocketsWithLivedataSessions: number,
 }
@@ -9,7 +9,25 @@ interface SocketInfoData extends IInfoData {
  * Provides the socket-level information.
  */
 class SocketInfo {
-  public info: SocketInfoData;
+  /**
+   * Describe the metrics provided by this service.
+   *
+   * @return {{
+   *   nSockets: {type: string, label: string},
+   *   nSocketsWithLivedataSessions: {type: string, label: string}
+   * }}
+   *  The description.
+   */
+  public static getDescription() {
+    const description = {
+      nSockets:                     { type: "integer", label: "Open sockets" },
+      nSocketsWithLivedataSessions: { type: "integer", label: "Sockets with session" },
+    };
+
+    return description;
+  }
+
+  public info: ISocketInfoData;
 
   /**
    * Constructor.
@@ -28,31 +46,13 @@ class SocketInfo {
   }
 
   /**
-   * Describe the metrics provided by this service.
-   *
-   * @return {{
-   *   nSockets: {type: string, label: string},
-   *   nSocketsWithLivedataSessions: {type: string, label: string}
-   * }}
-   *  The description.
-   */
-  static getDescription() {
-    const description = {
-      nSockets:                     { type: "integer", label: "Open sockets" },
-      nSocketsWithLivedataSessions: { type: "integer", label: "Sockets with session" },
-    };
-
-    return description;
-  }
-
-  /**
    * Check out the connections and what we know about them.
    *
    * @returns
    *   - nSockets: the global socket count
    *   - nSocketsWithLivedataSessions: the number of sockets with live data.
    */
-  getInfo(): SocketInfoData {
+  public getInfo(): ISocketInfoData {
     for (const socket of this.sockets) {
       this.info.nSockets += 1;
 
@@ -68,5 +68,5 @@ class SocketInfo {
 
 export {
   SocketInfo,
-  SocketInfoData,
+  ISocketInfoData,
 };

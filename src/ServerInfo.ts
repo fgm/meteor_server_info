@@ -1,6 +1,7 @@
 import connect from "connect";
 import {IncomingMessage, ServerResponse} from "http";
 import "process";
+
 // Not exposed
 // import { Facts } from "meteor/facts";
 // Not really usable
@@ -9,9 +10,9 @@ import "process";
 // import { MongoInternals } from "meteor/mongo";
 import {WebApp} from "meteor/webapp";
 
-import SessionInfo from "./SessionInfo";
 import MongoInfo from "./MongoInfo";
-import {NodeInfo, NodeInfoStore} from "./NodeInfo";
+import {INodeInfoStore, NodeInfo} from "./NodeInfo";
+import SessionInfo from "./SessionInfo";
 import {SocketInfo} from "./SocketInfo";
 
 interface IFacts {
@@ -34,28 +35,50 @@ interface IInfoSection {
   getInfo: () => IInfoData,
 }
 
-interface ServerInfoSettings {
+interface IServerInfoSettings {
+  pass: string,
   path: string,
   user: string,
-  pass: string,
 }
 
-const defaultSettings: ServerInfoSettings = {
+const defaultSettings: IServerInfoSettings = {
+  pass: "secureme",
   path: "/serverInfo",
   user: "insecure",
-  pass: "secureme",
 };
 
-type Counter = Map<number | string, number>
+type Counter = Map<number | string, number>;
 
 // Connect 2 Authentication returns a middleware
-type Connect2Auth = (user: string, pass: string) => (req: IncomingMessage, res: ServerResponse, next: Function) => void;
+type Connect2Auth = (user: string, pass: string) =>
+  (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
 
-const ServerInfo = class ServerInfo {
+class ServerInfo {
+  /**
+   * Collect the descriptions provided for the metrics.
+   *
+   * @return {{
+   * sockets: {},
+   * sessions: {},
+   * mongo: {}
+   * }}
+   *   The descriptions
+   */
+  public static getDescriptions() {
+    const descriptions = {
+      mongo:    MongoInfo.getDescription(),
+      process:  NodeInfo.getDescription(),
+      sessions: SessionInfo.getDescription(),
+      sockets:  SocketInfo.getDescription(),
+    };
+
+    return descriptions;
+  }
+
   public connectHandlers: connect.Server;
-  public settings: ServerInfoSettings;
+  public settings: IServerInfoSettings;
   public store: {
-    process: NodeInfoStore,
+    process: INodeInfoStore,
   };
 
   /**
@@ -78,12 +101,12 @@ const ServerInfo = class ServerInfo {
     public mongoInternals: object,
     public facts: IFacts,
   ) {
-    this.settings = meteor.settings.serverInfo as ServerInfoSettings || defaultSettings;
+    this.settings = meteor.settings.serverInfo as IServerInfoSettings || defaultSettings;
     this.connectHandlers = webApp.connectHandlers;
     // We only use the Meteor default_server key, but we keep the whole Meteor
     // object in case the default_server key might change.
     this.store = {
-      process: {} as NodeInfoStore,
+      process: {} as INodeInfoStore,
     };
   }
 
@@ -93,12 +116,12 @@ const ServerInfo = class ServerInfo {
    * @returns {{}}
    *   A plain object of metrics by name.
    */
-  getInformation() {
+  public getInformation() {
     const sources = {
-      "sockets":  new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
-      "sessions": new SessionInfo(this.meteor.default_server.sessions),
-      "mongo":    new MongoInfo(this.mongoInternals),
-      "process":  new NodeInfo(process, this.store.process),
+      mongo:    new MongoInfo(this.mongoInternals),
+      process:  new NodeInfo(process, this.store.process),
+      sessions: new SessionInfo(this.meteor.default_server.sessions),
+      sockets:  new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
     };
 
     const results = Object.entries(sources).reduce(this.infoReducer, {});
@@ -109,27 +132,6 @@ const ServerInfo = class ServerInfo {
   }
 
   /**
-   * Collect the descriptions provided for the metrics.
-   *
-   * @return {{
-   * sockets: {},
-   * sessions: {},
-   * mongo: {}
-   * }}
-   *   The descriptions
-   */
-  static getDescriptions() {
-    const descriptions = {
-      "sockets":  SocketInfo.getDescription(),
-      "sessions": SessionInfo.getDescription(),
-      "mongo":    MongoInfo.getDescription(),
-      "process":  NodeInfo.getDescription(),
-    };
-
-    return descriptions;
-  }
-
-  /**
    * Route controller serving the collected info.
    *
    * @param req
@@ -137,7 +139,7 @@ const ServerInfo = class ServerInfo {
    * @param res
    *   A Connect response.
    */
-  handle(_req: IncomingMessage, res: ServerResponse): void {
+  public handle(_: IncomingMessage, res: ServerResponse): void {
     res.setHeader("content-type", "application/json");
     return res.end(JSON.stringify(this.getInformation()));
   }
@@ -150,9 +152,31 @@ const ServerInfo = class ServerInfo {
    * @param res
    *   A Connect response.
    */
-  handleDescription(_req: IncomingMessage, res: ServerResponse) {
+  public handleDescription(_: IncomingMessage, res: ServerResponse) {
     res.setHeader("content-type", "application/json");
     return res.end(JSON.stringify(ServerInfo.getDescriptions()));
+  }
+
+  /**
+   * Register a web route for the module.
+   *
+   * @param basicAuth
+   *   Optional. Pass the connect.basicAuth middleware from Connect 2.x here to
+   *   apply basic authentication to the info path using the user/pass from
+   *   settings.json. If this middleware is not passed, the info route will be
+   *   public, and assume it is protected by other means.
+   *
+   * @return {void}
+   */
+  public register(basicAuth?: Connect2Auth) {
+    const { path, user, pass } = this.settings;
+    this.connectHandlers
+      .use(path + "/doc", this.handleDescription.bind(this));
+
+    if (typeof basicAuth !== "undefined") {
+      this.connectHandlers.use(path, basicAuth!(user, pass));
+    }
+    this.connectHandlers.use(path, this.handle.bind(this));
   }
 
   /**
@@ -172,27 +196,28 @@ const ServerInfo = class ServerInfo {
    *
    * @see ServerInfo.getInformation()
    */
-  infoReducer(accu: any, [section, infoInstance]: [string, IInfoSection]) {
+  protected infoReducer(accu: any, [section, infoInstance]: [string, IInfoSection]) {
     interface IValues {
       [key: string]: number,
       [key: number]: number,
     }
     const infoData = infoInstance.getInfo();
     console.log(`infoData(${section}`, infoData);
-    let idk = "", idv = null;
+    let idk = "";
+    let idv = null;
     const infoRaw: {
-      [key: string]: number|IValues
+      [key: string]: number|IValues,
     } = {};
     for ([idk, idv] of Object.entries(infoData)) {
       console.log(`  idk ${idk}, idv`, idv);
-      if (typeof idv === 'number') {
+      if (typeof idv === "number") {
         infoRaw[idk] = idv;
-      }
-      else {
+      } else {
         // Then it is a Counter: get the values from the map
-        let tmp: IValues = (infoRaw[idk] || {}) as IValues;
+        const tmp: IValues = (infoRaw[idk] || {}) as IValues;
         const idv2: Counter = idv;
-        let k: number|string = "", v: number = 0;
+        let k: number|string = "";
+        let v: number = 0;
         for ([k, v] of idv2) {
           console.log(`    k ${k}, v`, v);
           tmp[k] = v;
@@ -204,34 +229,12 @@ const ServerInfo = class ServerInfo {
     accu[section] = infoRaw;
     return accu;
   }
-
-  /**
-   * Register a web route for the module.
-   *
-   * @param basicAuth
-   *   Optional. Pass the connect.basicAuth middleware from Connect 2.x here to
-   *   apply basic authentication to the info path using the user/pass from
-   *   settings.json. If this middleware is not passed, the info route will be
-   *   public, and assume it is protected by other means.
-   *
-   * @return {void}
-   */
-  register(basicAuth?: Connect2Auth) {
-    const { path, user, pass } = this.settings;
-    this.connectHandlers
-      .use(path + "/doc", this.handleDescription.bind(this));
-
-    if (typeof basicAuth !== 'undefined') {
-      this.connectHandlers.use(path, basicAuth!(user, pass));
-    }
-    this.connectHandlers.use(path, this.handle.bind(this));
-  }
-};
+}
 
 export {
   Counter,
   IInfoData,
   IInfoSection,
+  INodeInfoStore,
   ServerInfo,
-  NodeInfoStore,
 };

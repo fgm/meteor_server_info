@@ -1,6 +1,6 @@
 import {Counter, IInfoData, IInfoSection} from "./ServerInfo";
 
-interface MongoInfoData extends IInfoData {
+interface IMongoInfoData extends IInfoData {
   nObserveHandles:            number,
   oplogObserveHandles:        Counter,
   oplogObserveHandlesCount:   number,
@@ -8,7 +8,7 @@ interface MongoInfoData extends IInfoData {
   pollingObserveHandlesCount: number,
 }
 
-interface observerHandle {
+interface IObserverHandle {
   _observeDriver?: any,
   _multiplexer: any,
 }
@@ -17,7 +17,31 @@ interface observerHandle {
  * Provides the MongoDB-related information: observers and observed collections.
  */
 class MongoInfo implements IInfoSection {
-  public info: MongoInfoData;
+  /**
+   * Describe the metrics provided by this service.
+   *
+   * @return {{
+   *   nObserveHandles: {type: string, label: string},
+   *   oplogObserveHandles: {type: string, label: string},
+   *   oplogObserveHandlesCount: {type: string, label: string},
+   *   pollingObserveHandles: {type: string, label: string},
+   *   pollingObserveHandlesCount: {type: string, label: string}
+   * }}
+   *   The description.
+   */
+  public static getDescription() {
+    const description = {
+      nObserveHandles:            { type: "integer", label: "Overall observers count" },
+      oplogObserveHandles:        { type: "array", label: "Oplog-based observers[]" },
+      oplogObserveHandlesCount:   { type: "integer", label: "Oplog-based observers" },
+      pollingObserveHandles:      { type: "array", label: "Polling-based observers[]" },
+      pollingObserveHandlesCount: { type: "integer", label: "Polling-based observers" },
+    };
+
+    return description;
+  }
+
+  public info: IMongoInfoData;
   public muxes: any;
 
   /**
@@ -40,6 +64,27 @@ class MongoInfo implements IInfoSection {
   }
 
   /**
+   * Get MongoDB-level information.
+   *
+   * @returns {*}
+   *   - nObserveHandles: the total count of observe handles
+   *   - oplogObserveHandles hash: count of oplog observers by collection
+   *   - oplogObserveHandlesCount: the total count of oplog observers
+   *   - pollingObserveHandles hash: count of polling observers by collection
+   *   - pollingObserveHandlesCount: the total count of polling observers.
+   */
+  public getInfo(): IMongoInfoData {
+    for (const mux of Object.values(this.muxes)) {
+      const mux2 = mux as { _handles: { [key: string]: IObserverHandle }} ;
+      for (const handle of Object.values(mux2._handles)) {
+        this.buildHandleInfo(handle);
+      }
+    }
+
+    return this.info;
+  }
+
+  /**
    * Build information about observed collections into this.info.
    *
    * @param {String} type
@@ -51,7 +96,7 @@ class MongoInfo implements IInfoSection {
    *
    * @private
    */
-  buildCollectionInfo(type: "pollingObserveHandles"|"oplogObserveHandles", collectionName: string) {
+  protected buildCollectionInfo(type: "pollingObserveHandles"|"oplogObserveHandles", collectionName: string) {
     switch (type) {
       case "pollingObserveHandles":
         this.info.pollingObserveHandlesCount++;
@@ -79,7 +124,7 @@ class MongoInfo implements IInfoSection {
    *
    * @private
    */
-  buildHandleInfo(handle: observerHandle) {
+  protected buildHandleInfo(handle: IObserverHandle) {
     this.info.nObserveHandles += 1;
 
     // TODO check whether handle._observeDriver can actually occur.
@@ -88,51 +133,6 @@ class MongoInfo implements IInfoSection {
     const collectionName = driver._cursorDescription.collectionName;
     const observerType = driver._usesOplog ? "oplogObserveHandles" : "pollingObserveHandles";
     this.buildCollectionInfo(observerType, collectionName);
-  }
-
-  /**
-   * Describe the metrics provided by this service.
-   *
-   * @return {{
-   *   nObserveHandles: {type: string, label: string},
-   *   oplogObserveHandles: {type: string, label: string},
-   *   oplogObserveHandlesCount: {type: string, label: string},
-   *   pollingObserveHandles: {type: string, label: string},
-   *   pollingObserveHandlesCount: {type: string, label: string}
-   * }}
-   *   The description.
-   */
-  static getDescription() {
-    const description = {
-      nObserveHandles:            { type: "integer", label: "Overall observers count" },
-      oplogObserveHandles:        { type: "array", label: "Oplog-based observers[]" },
-      oplogObserveHandlesCount:   { type: "integer", label: "Oplog-based observers" },
-      pollingObserveHandles:      { type: "array", label: "Polling-based observers[]" },
-      pollingObserveHandlesCount: { type: "integer", label: "Polling-based observers" },
-    };
-
-    return description;
-  }
-
-  /**
-   * Get MongoDB-level information.
-   *
-   * @returns {*}
-   *   - nObserveHandles: the total count of observe handles
-   *   - oplogObserveHandles hash: count of oplog observers by collection
-   *   - oplogObserveHandlesCount: the total count of oplog observers
-   *   - pollingObserveHandles hash: count of polling observers by collection
-   *   - pollingObserveHandlesCount: the total count of polling observers.
-   */
-  getInfo(): MongoInfoData {
-    for (const mux of Object.values(this.muxes)) {
-      const mux2 = mux as { _handles: { [key: string]: observerHandle }} ;
-      for (const handle of Object.values(mux2._handles)) {
-        this.buildHandleInfo(handle);
-      }
-    }
-
-    return this.info;
   }
 }
 
