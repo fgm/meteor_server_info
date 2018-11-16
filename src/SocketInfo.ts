@@ -1,4 +1,4 @@
-import {IInfoData} from "./ServerInfo";
+import {IInfoData, IInfoDescription, IInfoSection } from "./types";
 
 interface ISocketInfoData extends IInfoData {
   nSockets: number,
@@ -8,26 +8,8 @@ interface ISocketInfoData extends IInfoData {
 /**
  * Provides the socket-level information.
  */
-class SocketInfo {
-  /**
-   * Describe the metrics provided by this service.
-   *
-   * @return {{
-   *   nSockets: {type: string, label: string},
-   *   nSocketsWithLivedataSessions: {type: string, label: string}
-   * }}
-   *  The description.
-   */
-  public static getDescription() {
-    const description = {
-      nSockets:                     { type: "integer", label: "Open sockets" },
-      nSocketsWithLivedataSessions: { type: "integer", label: "Sockets with session" },
-    };
-
-    return description;
-  }
-
-  public info: ISocketInfoData;
+class SocketInfo implements IInfoSection {
+  protected info: ISocketInfoData;
 
   /**
    * Constructor.
@@ -37,12 +19,29 @@ class SocketInfo {
    *
    * @constructor
    */
-  constructor(public sockets: any[]) {
+  constructor(protected sockets: any[]) {
     this.info = {
       nSockets:                     0,
       nSocketsWithLivedataSessions: 0,
     };
-    this.sockets = sockets;
+  }
+
+  /**
+   * Describe the metrics provided by this service.
+   *
+   * @return {{
+   *   nSockets: {type: string, label: string},
+   *   nSocketsWithLivedataSessions: {type: string, label: string}
+   * }}
+   *  The description.
+   */
+  public getDescription(): IInfoDescription {
+    const description = {
+      nSockets:                     { type: "integer", label: "Open sockets" },
+      nSocketsWithLivedataSessions: { type: "integer", label: "Sockets with session" },
+    };
+
+    return description;
   }
 
   /**

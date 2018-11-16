@@ -1,4 +1,5 @@
-import {Counter, IInfoData, IInfoSection} from "./ServerInfo";
+import {Counter} from "./types";
+import {IInfoData, IInfoDescription, IInfoSection} from "./types";
 
 interface IMongoInfoData extends IInfoData {
   nObserveHandles:            number,
@@ -17,32 +18,8 @@ interface IObserverHandle {
  * Provides the MongoDB-related information: observers and observed collections.
  */
 class MongoInfo implements IInfoSection {
-  /**
-   * Describe the metrics provided by this service.
-   *
-   * @return {{
-   *   nObserveHandles: {type: string, label: string},
-   *   oplogObserveHandles: {type: string, label: string},
-   *   oplogObserveHandlesCount: {type: string, label: string},
-   *   pollingObserveHandles: {type: string, label: string},
-   *   pollingObserveHandlesCount: {type: string, label: string}
-   * }}
-   *   The description.
-   */
-  public static getDescription() {
-    const description = {
-      nObserveHandles:            { type: "integer", label: "Overall observers count" },
-      oplogObserveHandles:        { type: "array", label: "Oplog-based observers[]" },
-      oplogObserveHandlesCount:   { type: "integer", label: "Oplog-based observers" },
-      pollingObserveHandles:      { type: "array", label: "Polling-based observers[]" },
-      pollingObserveHandlesCount: { type: "integer", label: "Polling-based observers" },
-    };
-
-    return description;
-  }
-
-  public info: IMongoInfoData;
-  public muxes: any;
+  protected info: IMongoInfoData;
+  protected muxes: any;
 
   /**
    * Constructor.
@@ -61,6 +38,30 @@ class MongoInfo implements IInfoSection {
       pollingObserveHandlesCount: 0,
     };
     this.muxes = MongoInternals.defaultRemoteCollectionDriver().mongo._observeMultiplexers;
+  }
+
+  /**
+   * Describe the metrics provided by this service.
+   *
+   * @return {{
+   *   nObserveHandles: {type: string, label: string},
+   *   oplogObserveHandles: {type: string, label: string},
+   *   oplogObserveHandlesCount: {type: string, label: string},
+   *   pollingObserveHandles: {type: string, label: string},
+   *   pollingObserveHandlesCount: {type: string, label: string}
+   * }}
+   *   The description.
+   */
+  public getDescription(): IInfoDescription {
+    const description = {
+      nObserveHandles:            { type: "integer", label: "Overall observers count" },
+      oplogObserveHandles:        { type: "array", label: "Oplog-based observers[]" },
+      oplogObserveHandlesCount:   { type: "integer", label: "Oplog-based observers" },
+      pollingObserveHandles:      { type: "array", label: "Polling-based observers[]" },
+      pollingObserveHandlesCount: { type: "integer", label: "Polling-based observers" },
+    };
+
+    return description;
   }
 
   /**
@@ -136,4 +137,6 @@ class MongoInfo implements IInfoSection {
   }
 }
 
-export default MongoInfo;
+export {
+  MongoInfo,
+};

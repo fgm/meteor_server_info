@@ -1,7 +1,9 @@
+// Node.JS imports.
 import connect from "connect";
 import {IncomingMessage, ServerResponse} from "http";
 import "process";
 
+// Meteor imports.
 // Not exposed
 // import { Facts } from "meteor/facts";
 // Not really usable
@@ -10,10 +12,12 @@ import "process";
 // import { MongoInternals } from "meteor/mongo";
 import {WebApp} from "meteor/webapp";
 
-import MongoInfo from "./MongoInfo";
+// Module imports.
+import {MongoInfo} from "./MongoInfo";
 import {INodeInfoStore, NodeInfo} from "./NodeInfo";
-import SessionInfo from "./SessionInfo";
+import {SessionInfo} from "./SessionInfo";
 import {SocketInfo} from "./SocketInfo";
+import {Counter, IInfoDescription, IInfoSection } from "./types";
 
 interface IFacts {
   _factsByPackage: {
@@ -28,11 +32,8 @@ interface IMeteor {
   },
 }
 
-interface IInfoData {
-  [key: string]: number | Counter,
-}
-interface IInfoSection {
-  getInfo: () => IInfoData,
+interface IInfoDescriptions {
+  [key: string]: IInfoDescription,
 }
 
 interface IServerInfoSettings {
@@ -47,34 +48,14 @@ const defaultSettings: IServerInfoSettings = {
   user: "insecure",
 };
 
-type Counter = Map<number | string, number>;
-
 // Connect 2 Authentication returns a middleware
 type Connect2Auth = (user: string, pass: string) =>
   (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
 
 class ServerInfo {
-  /**
-   * Collect the descriptions provided for the metrics.
-   *
-   * @return {{
-   * sockets: {},
-   * sessions: {},
-   * mongo: {}
-   * }}
-   *   The descriptions
-   */
-  public static getDescriptions() {
-    const descriptions = {
-      mongo:    MongoInfo.getDescription(),
-      process:  NodeInfo.getDescription(),
-      sessions: SessionInfo.getDescription(),
-      sockets:  SocketInfo.getDescription(),
-    };
-
-    return descriptions;
-  }
-
+  public sections: {
+    [key: string]: IInfoSection,
+  };
   public connectHandlers: connect.Server;
   public settings: IServerInfoSettings;
   public store: {
@@ -108,6 +89,27 @@ class ServerInfo {
     this.store = {
       process: {} as INodeInfoStore,
     };
+    this.sections = {
+      mongo:    new MongoInfo(this.mongoInternals),
+      process:  new NodeInfo(process, this.store.process),
+      sessions: new SessionInfo(this.meteor.default_server.sessions),
+      sockets:  new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
+    };
+  }
+
+  /**
+   * Collect the descriptions provided for the metrics.
+   *
+   * @return
+   *   The descriptions
+   */
+  public getDescriptions(): IInfoDescriptions {
+    const descriptions: IInfoDescriptions = {};
+    for (const [name, section] of Object.entries(this.sections)) {
+      descriptions[name] = section.getDescription();
+    }
+
+    return descriptions;
   }
 
   /**
@@ -117,14 +119,7 @@ class ServerInfo {
    *   A plain object of metrics by name.
    */
   public getInformation() {
-    const sources = {
-      mongo:    new MongoInfo(this.mongoInternals),
-      process:  new NodeInfo(process, this.store.process),
-      sessions: new SessionInfo(this.meteor.default_server.sessions),
-      sockets:  new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
-    };
-
-    const results = Object.entries(sources).reduce(this.infoReducer, {});
+    const results = Object.entries(this.sections).reduce(this.infoReducer, {});
     console.log("reduced", results);
     results.facts = Object.assign({}, this.facts._factsByPackage);
 
@@ -154,7 +149,7 @@ class ServerInfo {
    */
   public handleDescription(_: IncomingMessage, res: ServerResponse) {
     res.setHeader("content-type", "application/json");
-    return res.end(JSON.stringify(ServerInfo.getDescriptions()));
+    return res.end(JSON.stringify(this.getDescriptions()));
   }
 
   /**
@@ -232,9 +227,6 @@ class ServerInfo {
 }
 
 export {
-  Counter,
-  IInfoData,
-  IInfoSection,
   INodeInfoStore,
   ServerInfo,
 };

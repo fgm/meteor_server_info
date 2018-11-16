@@ -1,14 +1,14 @@
-import { IInfoData } from "./ServerInfo";
-interface SocketInfoData extends IInfoData {
+import { IInfoData, IInfoDescription, IInfoSection } from "./types";
+interface ISocketInfoData extends IInfoData {
     nSockets: number;
     nSocketsWithLivedataSessions: number;
 }
 /**
  * Provides the socket-level information.
  */
-declare class SocketInfo {
-    sockets: any[];
-    info: SocketInfoData;
+declare class SocketInfo implements IInfoSection {
+    protected sockets: any[];
+    protected info: ISocketInfoData;
     /**
      * Constructor.
      *
@@ -27,16 +27,7 @@ declare class SocketInfo {
      * }}
      *  The description.
      */
-    static getDescription(): {
-        nSockets: {
-            type: string;
-            label: string;
-        };
-        nSocketsWithLivedataSessions: {
-            type: string;
-            label: string;
-        };
-    };
+    getDescription(): IInfoDescription;
     /**
      * Check out the connections and what we know about them.
      *
@@ -44,6 +35,6 @@ declare class SocketInfo {
      *   - nSockets: the global socket count
      *   - nSocketsWithLivedataSessions: the number of sockets with live data.
      */
-    getInfo(): SocketInfoData;
+    getInfo(): ISocketInfoData;
 }
-export { SocketInfo, SocketInfoData, };
+export { SocketInfo, ISocketInfoData, };

@@ -1,9 +1,9 @@
 /// <reference types="node" />
 import "process";
-import { IInfoData } from "./ServerInfo";
-interface NodeInfoData extends IInfoData {
-    cpuUser: number;
+import { IInfoData, IInfoDescription, IInfoSection } from "./types";
+interface INodeInfoData extends IInfoData {
     cpuSystem: number;
+    cpuUser: number;
     ramExternal: number;
     ramHeapTotal: number;
     ramHeapUsed: number;
@@ -12,17 +12,17 @@ interface NodeInfoData extends IInfoData {
 /**
  * An off-instance structure to preserve information between instance creations.
  */
-interface NodeInfoStore {
+interface INodeInfoStore {
     latestCpu: any;
     latestPoll: number;
 }
 /**
  * Provides the Node.JS-related information: RAM, CPU load.
  */
-declare class NodeInfo {
-    store: NodeInfoStore;
-    info: NodeInfoData;
-    process: typeof process;
+declare class NodeInfo implements IInfoSection {
+    protected store: INodeInfoStore;
+    protected info: INodeInfoData;
+    protected process: typeof process;
     /**
      * @param process
      *   The NodeJS process module or a stub for it.
@@ -31,17 +31,7 @@ declare class NodeInfo {
      *
      * @constructor
      */
-    constructor(p: typeof process, store: NodeInfoStore);
-    /**
-     * Update the CPU reading and return it normalized per second.
-     *
-     * @returns {{user: number, system: number}}
-     *   The normalized time spent since last polling.
-     */
-    pollCpuUsage(): {
-        user: number;
-        system: number;
-    };
+    constructor(p: typeof process, store: INodeInfoStore);
     /**
      * Describe the metrics provided by this service.
      *
@@ -53,43 +43,28 @@ declare class NodeInfo {
      * }}
      *  The description.
      */
-    static getDescription(): {
-        cpuUser: {
-            type: string;
-            label: string;
-        };
-        cpuSystem: {
-            type: string;
-            label: string;
-        };
-        ramExternal: {
-            type: string;
-            label: string;
-        };
-        ramHeapTotal: {
-            type: string;
-            label: string;
-        };
-        ramHeapUsed: {
-            type: string;
-            label: string;
-        };
-        ramRss: {
-            type: string;
-            label: string;
-        };
-    };
+    getDescription(): IInfoDescription;
     /**
      * Get session information.
      *
      * @returns {Object}
-     *   - ramRss
-     *   - ramHeapTotal
-     *   - ramHeapUsed
-     *   - ramExternal
      *   - cpuSystem
      *   - cpuUser
+     *   - ramExternal
+     *   - ramHeapTotal
+     *   - ramHeapUsed
+     *   - ramRss
      */
-    getInfo(): NodeInfoData;
+    getInfo(): INodeInfoData;
+    /**
+     * Update the CPU reading and return it normalized per second.
+     *
+     * @returns {{user: number, system: number}}
+     *   The normalized time spent since last polling.
+     */
+    protected pollCpuUsage(): {
+        system: number;
+        user: number;
+    };
 }
-export { NodeInfo, NodeInfoData, NodeInfoStore, };
+export { NodeInfo, INodeInfoData, INodeInfoStore, };

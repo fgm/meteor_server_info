@@ -1,6 +1,6 @@
 import {Session} from "meteor/session";
 
-import {Counter, IInfoData} from "./ServerInfo";
+import {Counter, IInfoData, IInfoDescription, IInfoSection} from "./types";
 
 interface ISessionInfoData extends IInfoData {
   nDocuments: Counter,
@@ -12,11 +12,28 @@ interface ISessionInfoData extends IInfoData {
 /**
  * Provides the session-related information: sessions, subscriptions, documents.
  */
-class SessionInfo {
+class SessionInfo implements IInfoSection {
+  protected info: ISessionInfoData;
+
+  /**
+   * @param sessions
+   *   The private structure held by Meteor for its sessions list.
+   *
+   * @constructor
+   */
+  constructor(protected sessions: Array<typeof Session>) {
+    this.info = {
+      nDocuments:              new Map(),
+      nSessions:               0,
+      nSubs:                   new Map(),
+      usersWithNSubscriptions: new Map(),
+    };
+  }
+
   /**
    * Describe the metrics provided by this service.
    */
-  public static getDescription() {
+  public getDescription(): IInfoDescription {
     const description = {
       nDocuments:              { type: "array", label: "Documents per subscription[][]" },
       nSessions:               { type: "int", label: "Sessions" },
@@ -25,24 +42,6 @@ class SessionInfo {
     };
 
     return description;
-  }
-
-  public info: ISessionInfoData;
-
-  /**
-   * @param sessions
-   *   The private structure held by Meteor for its sessions list.
-   *
-   * @constructor
-   */
-  constructor(public sessions: Array<typeof Session>) {
-    this.info = {
-      nDocuments:              new Map(),
-      nSessions:               0,
-      nSubs:                   new Map(),
-      usersWithNSubscriptions: new Map(),
-    };
-    this.sessions = sessions;
   }
 
   /**
@@ -121,4 +120,6 @@ class SessionInfo {
   }
 }
 
-export default SessionInfo;
+export {
+  SessionInfo,
+};
