@@ -1,5 +1,10 @@
 /// <reference types="node" />
-import "process";
+import CpuUsage = NodeJS.CpuUsage;
+/**
+ * Same structure as NodeJS CpuUsage, but not same meaning for the values.
+ */
+import CpuUsageNormalized = NodeJS.CpuUsage;
+import Process = NodeJS.Process;
 import { IInfoData, IInfoDescription, IInfoSection } from "./types";
 interface INodeInfoData extends IInfoData {
     cpuSystem: number;
@@ -13,16 +18,16 @@ interface INodeInfoData extends IInfoData {
  * An off-instance structure to preserve information between instance creations.
  */
 interface INodeInfoStore {
-    latestCpu: any;
+    latestCpu: CpuUsage;
     latestPoll: number;
 }
 /**
  * Provides the Node.JS-related information: RAM, CPU load.
  */
 declare class NodeInfo implements IInfoSection {
+    protected process: Process;
     protected store: INodeInfoStore;
     protected info: INodeInfoData;
-    protected process: typeof process;
     /**
      * @param process
      *   The NodeJS process module or a stub for it.
@@ -31,40 +36,24 @@ declare class NodeInfo implements IInfoSection {
      *
      * @constructor
      */
-    constructor(p: typeof process, store: INodeInfoStore);
+    constructor(process: Process, store: INodeInfoStore);
     /**
      * Describe the metrics provided by this service.
      *
-     * @return {{
-     *   nDocuments: {type: string, label: string},
-     *   nSessions: {type: string, label: string},
-     *   nSubs: {type: string, label: string},
-     *   usersWithNSubscriptions: {type: string, label: string}
-     * }}
-     *  The description.
+     * @return
+     *   The description.
      */
     getDescription(): IInfoDescription;
     /**
-     * Get session information.
-     *
-     * @returns {Object}
-     *   - cpuSystem
-     *   - cpuUser
-     *   - ramExternal
-     *   - ramHeapTotal
-     *   - ramHeapUsed
-     *   - ramRss
+     * Get process information about CPU and RAM usage.
      */
     getInfo(): INodeInfoData;
     /**
      * Update the CPU reading and return it normalized per second.
      *
-     * @returns {{user: number, system: number}}
+     * @returns
      *   The normalized time spent since last polling.
      */
-    protected pollCpuUsage(): {
-        system: number;
-        user: number;
-    };
+    protected pollCpuUsage(): CpuUsageNormalized;
 }
 export { NodeInfo, INodeInfoData, INodeInfoStore, };
