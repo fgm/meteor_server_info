@@ -62,7 +62,7 @@ declare class ServerInfo {
     /**
      * Collect the information from Meteor structures.
      *
-     * @returns {{}}
+     * @return {{}}
      *   A plain object of metrics by name.
      */
     getInformation(): any;

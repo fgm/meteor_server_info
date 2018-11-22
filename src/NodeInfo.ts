@@ -61,12 +61,30 @@ class NodeInfo implements IInfoSection {
   public getDescription(): IInfoDescription {
     const numberTypeName = "number";
     const description = {
-      cpuSystem:    { type: numberTypeName, label: "CPU system seconds since last sample. May be > 1 on multiple cores." },
-      cpuUser:      { type: numberTypeName, label: "CPU user seconds since last sample. May be > 1 on multiple cores." },
-      ramExternal:  { type: numberTypeName, label: "C++ memory bound to V8 JS objects" },
-      ramHeapTotal: { type: numberTypeName, label: "V8 Total heap" },
-      ramHeapUsed:  { type: numberTypeName, label: "V8 Used heap" },
-      ramRss:       { type: numberTypeName, label: "Resident Set Size (heap, code segment, stack)" },
+      cpuSystem: {
+        label: "CPU system seconds since last sample. May be > 1 on multiple cores.",
+        type: numberTypeName,
+      },
+      cpuUser: {
+        label: "CPU user seconds since last sample. May be > 1 on multiple cores.",
+        type: numberTypeName,
+      },
+      ramExternal: {
+        label: "C++ memory bound to V8 JS objects",
+        type: numberTypeName,
+      },
+      ramHeapTotal: {
+        label: "V8 Total heap",
+        type: numberTypeName,
+      },
+      ramHeapUsed: {
+        label: "V8 Used heap",
+        type: numberTypeName,
+      },
+      ramRss: {
+        label: "Resident Set Size (heap, code segment, stack)",
+        type: numberTypeName,
+      },
     };
 
     return description;
@@ -92,7 +110,7 @@ class NodeInfo implements IInfoSection {
   /**
    * Update the CPU reading and return it normalized per second.
    *
-   * @returns
+   * @return
    *   The normalized time spent since last polling.
    */
   protected pollCpuUsage(): CpuUsageNormalized {

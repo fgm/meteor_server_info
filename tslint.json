@@ -6,9 +6,11 @@
   "jsRules": {},
   "rules": {
     "align": [true, "parameters", "statements"],
-    "semicolon": [true, "always", "ignore-interfaces"],
     "max-classes-per-file": [true, 1, "exclude-class-expressions"],
-    "typedef-whitespace": [true, "nospace", "space"]
+    "no-string-literal": false,
+    "semicolon": [true, "always", "ignore-interfaces"],
+    "typedef-whitespace": [true, "nospace", "space"],
+    "variable-name": [true, "check-format", "allow-leading-underscore"]
   },
   "rulesDirectory": []
 }

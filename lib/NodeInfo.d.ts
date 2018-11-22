@@ -51,7 +51,7 @@ declare class NodeInfo implements IInfoSection {
     /**
      * Update the CPU reading and return it normalized per second.
      *
-     * @returns
+     * @return
      *   The normalized time spent since last polling.
      */
     protected pollCpuUsage(): CpuUsageNormalized;

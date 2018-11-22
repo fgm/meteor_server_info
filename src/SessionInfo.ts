@@ -1,5 +1,3 @@
-import {Session} from "meteor/session";
-
 import {Counter, IInfoData, IInfoDescription, IInfoSection} from "./types";
 
 interface ISessionInfoData extends IInfoData {
@@ -7,6 +5,34 @@ interface ISessionInfoData extends IInfoData {
   nSessions: number,
   nSubs: Counter,
   usersWithNSubscriptions: Counter,
+}
+
+interface INamedSessions {
+  [key: string]: ISession,
+}
+
+interface INamedSubscriptions {
+  [subscriptionName: string]: ISubscription,
+}
+
+interface ISession {
+  _namedSubs: INamedSubscriptions,
+  _universalSubs?: ISubscription[],
+  id: string,
+}
+
+interface ISubscription {
+  _documents: ISubscriptionDocuments,
+  _name: string,
+}
+
+interface IDocumentIds {
+  /* tslint:disable-next-line:callable-types */
+  [_id: string]: boolean,
+}
+
+interface ISubscriptionDocuments {
+  [collection: string]: IDocumentIds,
 }
 
 /**
@@ -21,13 +47,8 @@ class SessionInfo implements IInfoSection {
    *
    * @constructor
    */
-  constructor(protected sessions: Array<typeof Session>) {
-    this.info = {
-      nDocuments:              new Map(),
-      nSessions:               0,
-      nSubs:                   new Map(),
-      usersWithNSubscriptions: new Map(),
-    };
+  constructor(protected sessions: INamedSessions) {
+    this.info = this.defaultInfo();
   }
 
   /**
@@ -35,10 +56,22 @@ class SessionInfo implements IInfoSection {
    */
   public getDescription(): IInfoDescription {
     const description = {
-      nDocuments:              { type: "array", label: "Documents per subscription[][]" },
-      nSessions:               { type: "int", label: "Sessions" },
-      nSubs:                   { type: "array", label: "Subscriptions per session[]" },
-      usersWithNSubscriptions: { type: "array", label: "User counts per subscription count[]" },
+      nDocuments: {
+        label: "Total number of documents across subscriptions. Each appearance in a subscription counts.",
+        type: "Map",
+      },
+      nSessions: {
+        label: "Number of sessions",
+        type: "number",
+      },
+      nSubs: {
+        label: "Total number of Subscriptions  across sessions",
+        type: "Map",
+      },
+      usersWithNSubscriptions: {
+        label: "User counts per subscription count",
+        type: "Map",
+      },
     };
 
     return description;
@@ -47,48 +80,78 @@ class SessionInfo implements IInfoSection {
   /**
    * Get session information.
    *
-   * @returns
+   * @return
    *   - nSessions: the overall number of sessions
    *   - usersWithNSubscriptions: a Counter of the users count per number of subs.
    *   - nSubs: a Counter of subscriptions count per subscription name
    *   - nDocuments: a Counter of document counts per subscription
    */
   public getInfo(): ISessionInfoData {
-    for (const session of Object.values(this.sessions)) {
-      const session2 = session as unknown as { _namedSubs: any };
-      this.buildSessionInfo(Object.values(session2._namedSubs));
+    this.info = this.defaultInfo();
+    this.info.nSessions = Object.keys(this.sessions).length;
+    for (let session of Object.values(this.sessions)) {
+      session = {
+        _namedSubs: session._namedSubs,
+        id: session.id,
+      };
+      this.addPerSessionInfo(Object.values(session._namedSubs));
     }
 
     return this.info;
   }
 
   /**
-   * Build the session information into this.info.
+   * Add the session information to this.info.
    *
-   * @param {Array} subscriptions
+   * @param subscriptions
    *   The private structure held by Meteor for the subscriptions of a session.
    */
-  protected buildSessionInfo(subscriptions: any[]): void {
-    this.info.nSessions += 1;
+  protected addPerSessionInfo(subscriptions: ISubscription[]): void {
     const subCount = subscriptions.length;
-    this.initKey(this.info.usersWithNSubscriptions, subCount);
-    this.info.usersWithNSubscriptions.set(subCount, this.info.usersWithNSubscriptions.get(subCount)! + 1);
-    this.buildSubscriptionInfoPerSession(subscriptions);
+    this.incrementCounter(this.info.usersWithNSubscriptions, subCount);
+    this.addPerSessionSubscriptionInfo(subscriptions);
   }
 
   /**
    * Build the subscription information for a session into this.info.
    *
-   * @param {Array} subscriptions
+   * @param subscriptions
    *   The private structure held by Meteor for a subscription within a session.
    */
-  protected buildSubscriptionInfoPerSession(subscriptions: any[]): void {
-    for (const subscription of subscriptions) {
-      this.initKey(this.info.nSubs, subscription._name);
-      // get() is guaranteed to be defined because we just did initKey().
-      this.info.nSubs.set(subscription._name, this.info.nSubs.get(subscription._name)! + 1);
+  protected addPerSessionSubscriptionInfo(subscriptions: ISubscription[]): void {
+    for (let subscription of subscriptions) {
+      subscription = {
+        _documents: subscription._documents,
+        _name: subscription._name,
+      };
+      this.incrementCounter(this.info.nSubs, subscription._name);
       this._buildDocumentCountsPerSubscription(subscription._documents);
     }
+  }
+
+  /**
+   * Provide info initialization data, to allow recalculating it on an instance.
+   */
+  protected defaultInfo(): ISessionInfoData {
+    return {
+      nDocuments:              new Map(),
+      nSessions:               0,
+      nSubs:                   new Map(),
+      usersWithNSubscriptions: new Map(),
+    };
+  }
+
+  /**
+   * Increment counter value for a key, initializing if needed.
+   *
+   * @param counter
+   * @param key
+   * @param increment
+   */
+  protected incrementCounter(counter: Counter, key: any, increment: number = 1) {
+    this.initKey(counter, key);
+    // get() is guaranteed to be defined because we just did initKey().
+    counter.set(key, counter.get(key)! + increment);
   }
 
   /**
@@ -111,15 +174,21 @@ class SessionInfo implements IInfoSection {
    * @param documents
    *   The private structure held by Meteor for the documents of a subscription.
    */
-  protected _buildDocumentCountsPerSubscription(documents: any[]): void {
-    for (const [type, document] of Object.entries(documents)) {
-      this.initKey(this.info.nDocuments, type);
-      // get() is guaranteed to be defined because we just did initKey().
-      this.info.nDocuments.set(type, this.info.nDocuments.get(type)! + Object.keys(document).length);
+  protected _buildDocumentCountsPerSubscription(documents: ISubscriptionDocuments): void {
+    const entries: Array<[string, IDocumentIds]> = Object.entries(documents);
+    for (const entry of entries) {
+      // Inlining the destructuring in for() loses type information, so do it here.
+      const [type, document] = entry;
+      this.incrementCounter(this.info.nDocuments, type, Object.keys(document).length);
     }
   }
 }
 
 export {
+  ISessionInfoData,
   SessionInfo,
+
+  // Only for tests
+  INamedSessions,
+  ISubscription,
 };

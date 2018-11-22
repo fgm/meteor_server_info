@@ -115,12 +115,11 @@ class ServerInfo {
   /**
    * Collect the information from Meteor structures.
    *
-   * @returns {{}}
+   * @return {{}}
    *   A plain object of metrics by name.
    */
   public getInformation() {
     const results = Object.entries(this.sections).reduce(this.infoReducer, {});
-    console.log("reduced", results);
     results.facts = Object.assign({}, this.facts._factsByPackage);
 
     return results;
@@ -197,14 +196,12 @@ class ServerInfo {
       [key: number]: number,
     }
     const infoData = infoInstance.getInfo();
-    console.log(`infoData(${section}`, infoData);
     let idk = "";
     let idv = null;
     const infoRaw: {
       [key: string]: number|IValues,
     } = {};
     for ([idk, idv] of Object.entries(infoData)) {
-      console.log(`  idk ${idk}, idv`, idv);
       if (typeof idv === "number") {
         infoRaw[idk] = idv;
       } else {
@@ -214,7 +211,6 @@ class ServerInfo {
         let k: number|string = "";
         let v: number = 0;
         for ([k, v] of idv2) {
-          console.log(`    k ${k}, v`, v);
           tmp[k] = v;
         }
         infoRaw[idk] = tmp;

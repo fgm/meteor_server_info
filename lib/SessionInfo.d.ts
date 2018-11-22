@@ -1,4 +1,3 @@
-import { Session } from "meteor/session";
 import { Counter, IInfoData, IInfoDescription, IInfoSection } from "./types";
 interface ISessionInfoData extends IInfoData {
     nDocuments: Counter;
@@ -6,11 +5,32 @@ interface ISessionInfoData extends IInfoData {
     nSubs: Counter;
     usersWithNSubscriptions: Counter;
 }
+interface INamedSessions {
+    [key: string]: ISession;
+}
+interface INamedSubscriptions {
+    [subscriptionName: string]: ISubscription;
+}
+interface ISession {
+    _namedSubs: INamedSubscriptions;
+    _universalSubs?: ISubscription[];
+    id: string;
+}
+interface ISubscription {
+    _documents: ISubscriptionDocuments;
+    _name: string;
+}
+interface IDocumentIds {
+    [_id: string]: boolean;
+}
+interface ISubscriptionDocuments {
+    [collection: string]: IDocumentIds;
+}
 /**
  * Provides the session-related information: sessions, subscriptions, documents.
  */
 declare class SessionInfo implements IInfoSection {
-    protected sessions: Array<typeof Session>;
+    protected sessions: INamedSessions;
     protected info: ISessionInfoData;
     /**
      * @param sessions
@@ -18,7 +38,7 @@ declare class SessionInfo implements IInfoSection {
      *
      * @constructor
      */
-    constructor(sessions: Array<typeof Session>);
+    constructor(sessions: INamedSessions);
     /**
      * Describe the metrics provided by this service.
      */
@@ -26,7 +46,7 @@ declare class SessionInfo implements IInfoSection {
     /**
      * Get session information.
      *
-     * @returns
+     * @return
      *   - nSessions: the overall number of sessions
      *   - usersWithNSubscriptions: a Counter of the users count per number of subs.
      *   - nSubs: a Counter of subscriptions count per subscription name
@@ -34,19 +54,31 @@ declare class SessionInfo implements IInfoSection {
      */
     getInfo(): ISessionInfoData;
     /**
-     * Build the session information into this.info.
+     * Add the session information to this.info.
      *
-     * @param {Array} subscriptions
+     * @param subscriptions
      *   The private structure held by Meteor for the subscriptions of a session.
      */
-    protected buildSessionInfo(subscriptions: any[]): void;
+    protected addPerSessionInfo(subscriptions: ISubscription[]): void;
     /**
      * Build the subscription information for a session into this.info.
      *
-     * @param {Array} subscriptions
+     * @param subscriptions
      *   The private structure held by Meteor for a subscription within a session.
      */
-    protected buildSubscriptionInfoPerSession(subscriptions: any[]): void;
+    protected addPerSessionSubscriptionInfo(subscriptions: ISubscription[]): void;
+    /**
+     * Provide info initialization data, to allow recalculating it on an instance.
+     */
+    protected defaultInfo(): ISessionInfoData;
+    /**
+     * Increment counter value for a key, initializing if needed.
+     *
+     * @param counter
+     * @param key
+     * @param increment
+     */
+    protected incrementCounter(counter: Counter, key: any, increment?: number): void;
     /**
      * Ensure initialization of a counter. Do not modify it if alreay set.
      *
@@ -62,6 +94,6 @@ declare class SessionInfo implements IInfoSection {
      * @param documents
      *   The private structure held by Meteor for the documents of a subscription.
      */
-    protected _buildDocumentCountsPerSubscription(documents: any[]): void;
+    protected _buildDocumentCountsPerSubscription(documents: ISubscriptionDocuments): void;
 }
-export { SessionInfo, };
+export { ISessionInfoData, SessionInfo, INamedSessions, ISubscription, };

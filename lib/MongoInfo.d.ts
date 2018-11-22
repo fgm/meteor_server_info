@@ -20,12 +20,12 @@ declare class MongoInfo implements IInfoSection {
     /**
      * Constructor.
      *
-     * @param {Object} MongoInternals
+     * @param {Object} mongoInternals
      *   The Meteor MongoInternals service.
      *
      * @constructor
      */
-    constructor(MongoInternals: any);
+    constructor(mongoInternals: any);
     /**
      * Describe the metrics provided by this service.
      *
@@ -42,7 +42,7 @@ declare class MongoInfo implements IInfoSection {
     /**
      * Get MongoDB-level information.
      *
-     * @returns {*}
+     * @return {*}
      *   - nObserveHandles: the total count of observe handles
      *   - oplogObserveHandles hash: count of oplog observers by collection
      *   - oplogObserveHandlesCount: the total count of oplog observers
@@ -58,7 +58,7 @@ declare class MongoInfo implements IInfoSection {
      * @param {String} collectionName
      *   The observed collection name.
      *
-     * @returns {void}
+     * @return {void}
      *
      * @private
      */
@@ -69,7 +69,7 @@ declare class MongoInfo implements IInfoSection {
      * @param {Object} handle
      *   The private structure held by Meteor for an observer.
      *
-     * @returns {void}
+     * @return {void}
      *
      * @private
      */

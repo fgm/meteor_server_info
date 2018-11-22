@@ -5,6 +5,7 @@ import MemoryUsage = NodeJS.MemoryUsage;
 //import Process = NodeJS.Process;
 
 import {INodeInfoData, INodeInfoStore, NodeInfo} from "../../src/NodeInfo";
+import {IInfoDescription} from "../../src/types";
 
 /**
  * These tests run on node 8.4, to process.hrtime.bigint() is not available yet.
@@ -64,11 +65,26 @@ function testNodeInfo() {
     const lag = t1[0] + t1[1] / 1E9;
 
     const info: INodeInfoData = collector.getInfo();
-    console.log(info, t1);
     expect(info.cpuSystem).toBeGreaterThanOrEqual(0);
     expect(info.cpuSystem).toBeLessThan(1);
     expect(info.cpuUser).toBeGreaterThan(lag);
   });
+
+  test("All CPU usage information is documented", () => {
+    const collector = getTestingNodeCollector();
+    const info: INodeInfoData = collector.getInfo();
+    const descriptions: IInfoDescription = collector.getDescription()
+    const keys = Object.keys(info);
+    expect(keys.length).toBeGreaterThan(0);
+    for (const key of keys) {
+      const description = descriptions[key];
+      expect(description).toBeDefined();
+      expect(description).toHaveProperty("type");
+      expect(description).toHaveProperty("label");
+      expect(description.label.length).toBeGreaterThan(0);
+      expect(typeof info[key]).toBe(description.type);
+    }
+  })
 }
 
 export {

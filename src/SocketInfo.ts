@@ -47,7 +47,7 @@ class SocketInfo implements IInfoSection {
   /**
    * Check out the connections and what we know about them.
    *
-   * @returns
+   * @return
    *   - nSockets: the global socket count
    *   - nSocketsWithLivedataSessions: the number of sockets with live data.
    */
