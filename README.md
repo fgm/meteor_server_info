@@ -4,6 +4,9 @@
 - Rewritten in TypeScript 3 for Meteor 1.6-1.8
 - Without the AWS-specific and extra sections, not relevant for most usages.
 
+[![Build Status](https://travis-ci.org/fgm/meteor_server_info.svg?branch=1-meteor_1.8)](https://travis-ci.org/fgm/meteor_server_info)
+[![codecov](https://codecov.io/gh/fgm/meteor_server_info/branch/1-meteor_1.8/graph/badge.svg)](https://codecov.io/gh/fgm/meteor_server_info)
+[![Known Vulnerabilities](https://snyk.io/test/github/fgm/meteor_server_info/badge.svg?targetFile=package.json)](https://snyk.io/test/github/fgm/meteor_server_info?targetFile=package.json)
 
 ## Usage
 
@@ -73,6 +76,8 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 * 1.1.2
   * updated documentation
+  * Travis CI tests
+  * CodeCov coverage analysis.
 * 1.1.1
   * include RAM / CPU metrics
 * 1.0.1
