@@ -26,6 +26,7 @@ declare class MongoInfo implements IInfoSection {
      * @constructor
      */
     constructor(mongoInternals: any);
+    private defaultInfo;
     /**
      * Describe the metrics provided by this service.
      *

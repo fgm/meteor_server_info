@@ -20,8 +20,12 @@ class SocketInfo implements IInfoSection {
    * @constructor
    */
   constructor(protected sockets: any[]) {
-    this.info = {
-      nSockets:                     0,
+    this.info = this.defaultInfo();
+  }
+
+  private defaultInfo(): ISocketInfoData {
+    return {
+      nSockets: 0,
       nSocketsWithLivedataSessions: 0,
     };
   }
@@ -52,6 +56,7 @@ class SocketInfo implements IInfoSection {
    *   - nSocketsWithLivedataSessions: the number of sockets with live data.
    */
   public getInfo(): ISocketInfoData {
+    this.info = this.defaultInfo();
     for (const socket of this.sockets) {
       this.info.nSockets += 1;
 

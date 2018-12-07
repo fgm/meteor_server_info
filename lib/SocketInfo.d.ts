@@ -18,6 +18,7 @@ declare class SocketInfo implements IInfoSection {
      * @constructor
      */
     constructor(sockets: any[]);
+    private defaultInfo;
     /**
      * Describe the metrics provided by this service.
      *

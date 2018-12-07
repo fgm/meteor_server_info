@@ -29,15 +29,19 @@ class MongoInfo implements IInfoSection {
    *
    * @constructor
    */
-  constructor(mongoInternals: any) {
-    this.info = {
-      nObserveHandles:            0,
-      oplogObserveHandles:        new Map(),
-      oplogObserveHandlesCount:   0,
-      pollingObserveHandles:      new Map(),
+    constructor(mongoInternals: any) {
+    this.info = this.defaultInfo();
+    this.muxes = mongoInternals.defaultRemoteCollectionDriver().mongo._observeMultiplexers;
+  }
+
+  private defaultInfo(): IMongoInfoData {
+    return {
+      nObserveHandles: 0,
+      oplogObserveHandles: new Map(),
+      oplogObserveHandlesCount: 0,
+      pollingObserveHandles: new Map(),
       pollingObserveHandlesCount: 0,
     };
-    this.muxes = mongoInternals.defaultRemoteCollectionDriver().mongo._observeMultiplexers;
   }
 
   /**
@@ -75,6 +79,7 @@ class MongoInfo implements IInfoSection {
    *   - pollingObserveHandlesCount: the total count of polling observers.
    */
   public getInfo(): IMongoInfoData {
+    this.info = this.defaultInfo();
     for (const mux of Object.values(this.muxes)) {
       const mux2 = mux as { _handles: { [key: string]: IObserverHandle }} ;
       for (const handle of Object.values(mux2._handles)) {
