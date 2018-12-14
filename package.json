@@ -1,44 +1,71 @@
 {
-  "author": "FGM",
-  "dependencies": {},
+  "author": {
+    "name": "Frederic G. MARAND",
+    "email": "fgm@osinet.fr",
+    "url": "http://blog.riff.org"
+  },
+  "bugs": {
+    "url": "https://github.com/fgm/meteor_server_info/issues",
+    "email": "support@osinet.fr"
+  },
+  "description": "A NPM version of the Atmosephere percolate:meteor_server_info package.",
+  "dependencies": {
+    "@types/lodash": "^4.14.118",
+    "lodash": "^4.17.11"
+  },
   "devDependencies": {
-    "babel-cli": "^6.24.0",
-    "babel-core": "^6.24.0",
-    "babel-polyfill": "^6.23.0",
-    "babel-preset-env": "^1.6.1",
-    "chai": "^3.5.0",
-    "chai-http": "^3.0.0",
+    "@types/jest": "^23.3.1",
+    "@types/meteor": "^1.4.19",
+    "@types/node": "^10.11.2",
+    "@types/sinon": "^5.0.2",
+    "codecov": "^3.0.4",
     "growl": "^1.9.2",
     "ink-docstrap": "^1.3.0",
-    "install": "^0.8.7",
-    "istanbul": "1.1.0-alpha.1",
+    "jest": "^23.5.0",
     "jsdoc": "^3.5.5",
-    "marked": "~>0.3.9",
-    "mocha": "^3.2.0",
-    "npm": "^4.4.1",
-    "sinon": "^2.1.0"
+    "npm": "^6.0.0",
+    "sinon": "^6",
+    "ts-jest": "^23.10.1",
+    "tslint": "^5.11.0",
+    "typescript": "^3"
   },
   "engineStrict": true,
   "engines": {
     "npm": ">=2.0"
   },
-  "description": "A NPM version of percolate:server-info for Meteor 1.6+",
+  "engines#1": "We specify npm >= 2 to get proper local dependency support in",
+  "engines#2": "application itself ; this is not a package dependency per se.",
+  "homepage": "https://github.com/fgm/meteor_server_info",
   "keywords": [
     "apm",
-    "meteor"
+    "meteor",
+    "meteor-package",
+    "metrics",
+    "monitoring",
+    "observability"
   ],
   "license": "GPL-3.0+",
   "main": "lib/index.js",
   "name": "meteor_server_info",
+  "optionalDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fgm/meteor_server_info.git"
+  },
   "scripts": {
     "clean": "rm -fr coverage node_modules",
-    "compile": "rm -rf lib/* ; meteor npm i && meteor npm run test-compile",
-    "cover": "meteor npm run test-compile && time -p istanbul cover node_modules/.bin/_mocha -- --compilers js:babel-core/register test/**/*",
+    "compile": "rm -fr lib/* ; rm -fr node_modules ; meteor npm i && meteor npm run test-compile",
+    "cover": "meteor npm run test-compile && time -p jest --coverage __tests__/**/test.*",
     "doc": "rm -fr out ; jsdoc -c jsdoc.json",
-    "test": "meteor npm run test-compile && time -p mocha --compilers js:babel-core/register test/*",
-    "test-compile": "time -p babel --presets env -d lib/ src/",
-    "test-integration": "meteor npm run test-compile && time -p mocha --compilers js:babel-core/register test/integration",
-    "test-unit": "meteor npm run test-compile && time -p mocha --compilers js:babel-core/register test/unit"
+    "test": "meteor npm run test-compile && time -p jest            __tests__/**/test.*",
+    "test-ci": "npm run test-compile && time -p jest --coverage __tests__/unit/test.ts",
+    "test-compile": "time -p tsc",
+    "test-integration": "meteor npm run test-compile && time -p jest            __tests__/integration/test.ts",
+    "test-unit": "       meteor npm run test-compile && time -p jest            __tests__/unit/test.ts",
+    "ts-compile": "rm -fr lib src/*.js src/*/*.js; tsc -p tsconfig.json",
+    "ts-compile-tests": "rm -fr lib src/*.js src/*/*.js; tsc -p tsconfig_test.json",
+    "ts-lint": "tslint -p tsconfig.json"
   },
-  "version": "1.1.2"
+  "typings": "lib/index.d.ts",
+  "version": "1.2.0"
 }

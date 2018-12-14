@@ -1,9 +1,12 @@
 # Meteor server info
 
 - A NPM version (derivative work) of [percolate:server-info]
-- Rewritten in ES6 for Meteor 1.6+
+- Rewritten in TypeScript 3 for Meteor 1.6-1.8
 - Without the AWS-specific and extra sections, not relevant for most usages.
 
+[![Build Status](https://travis-ci.org/fgm/meteor_server_info.svg?branch=master)](https://travis-ci.org/fgm/meteor_server_info)
+[![codecov](https://codecov.io/gh/fgm/meteor_server_info/branch/master/graph/badge.svg)](https://codecov.io/gh/fgm/meteor_server_info)
+[![Known Vulnerabilities](https://snyk.io/test/github/fgm/meteor_server_info/badge.svg?targetFile=package.json)](https://snyk.io/test/github/fgm/meteor_server_info?targetFile=package.json)
 
 ## Usage
 
@@ -14,7 +17,7 @@ Once installed and configured, the package provides
 - a metrics values route available with HTTP Basic authentication, by 
   default on `/serverInfo`, like the following one:
 
-![screenshot]
+![Example Meteor Server Info result](screenshot.png)
 
 
 ## Installation
@@ -59,7 +62,7 @@ following server keys:
 
 Metrics exposed by the module can easily be imported to Grafana using the `http`
 plugin. Be sure to import data from all your Meteor server instances, since
-metrics are per-instance, not per-database.
+metrics are reported per-server, not per-database.
  
 
 ## License
@@ -71,8 +74,13 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 ## Changelog
 
+* 1.2.0
+  * Converted to TypeScript 3, with increased coverage
+  * Compatibility with Meteor 1.7 and 1.8.
 * 1.1.2
   * updated documentation
+  * Travis CI tests
+  * CodeCov coverage analysis.
 * 1.1.1
   * include RAM / CPU metrics
 * 1.0.1
@@ -82,3 +90,4 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
   * updated JsDoc to 3.5.5
   * fixed JsDoc configuration so that npm run doc actually works
 * 1.0.0: initial version
+  * For Meteor 1.6.x

@@ -1,7 +1,16 @@
+import {IInfoData, IInfoDescription, IInfoSection } from "./types";
+
+interface ISocketInfoData extends IInfoData {
+  nSockets: number,
+  nSocketsWithLivedataSessions: number,
+}
+
 /**
  * Provides the socket-level information.
  */
-class SocketInfo {
+class SocketInfo implements IInfoSection {
+  protected info: ISocketInfoData;
+
   /**
    * Constructor.
    *
@@ -10,12 +19,15 @@ class SocketInfo {
    *
    * @constructor
    */
-  constructor(sockets) {
-    this.info = {
-      nSockets:                     0,
+  constructor(protected sockets: any[]) {
+    this.info = this.defaultInfo();
+  }
+
+  private defaultInfo(): ISocketInfoData {
+    return {
+      nSockets: 0,
       nSocketsWithLivedataSessions: 0,
     };
-    this.sockets = sockets;
   }
 
   /**
@@ -27,7 +39,7 @@ class SocketInfo {
    * }}
    *  The description.
    */
-  static getDescription() {
+  public getDescription(): IInfoDescription {
     const description = {
       nSockets:                     { type: "integer", label: "Open sockets" },
       nSocketsWithLivedataSessions: { type: "integer", label: "Sockets with session" },
@@ -39,11 +51,12 @@ class SocketInfo {
   /**
    * Check out the connections and what we know about them.
    *
-   * @returns {Object}
+   * @return
    *   - nSockets: the global socket count
    *   - nSocketsWithLivedataSessions: the number of sockets with live data.
    */
-  getInfo() {
+  public getInfo(): ISocketInfoData {
+    this.info = this.defaultInfo();
     for (const socket of this.sockets) {
       this.info.nSockets += 1;
 
@@ -57,4 +70,7 @@ class SocketInfo {
   }
 }
 
-export default SocketInfo;
+export {
+  SocketInfo,
+  ISocketInfoData,
+};

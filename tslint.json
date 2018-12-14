@@ -1,0 +1,16 @@
+{
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:recommended"
+  ],
+  "jsRules": {},
+  "rules": {
+    "align": [true, "parameters", "statements"],
+    "max-classes-per-file": [true, 1, "exclude-class-expressions"],
+    "no-string-literal": false,
+    "semicolon": [true, "always", "ignore-interfaces"],
+    "typedef-whitespace": [true, "nospace", "space"],
+    "variable-name": [true, "check-format", "allow-leading-underscore"]
+  },
+  "rulesDirectory": []
+}
