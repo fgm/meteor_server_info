@@ -8,6 +8,8 @@ import Process = NodeJS.Process;
 
 import {IInfoData, IInfoDescription, IInfoSection} from "./types";
 
+type HrTime = [number, number];
+
 interface INodeInfoData extends IInfoData {
   cpuSystem:    number,
   cpuUser:      number,
@@ -15,20 +17,31 @@ interface INodeInfoData extends IInfoData {
   ramHeapTotal: number,
   ramHeapUsed:  number,
   ramRss:       number,
+  loopDelay:    number,
 }
 
 /**
  * An off-instance structure to preserve information between instance creations.
  */
 interface INodeInfoStore {
-  latestCpu: CpuUsage,
-  latestPoll: number,
+  latestCpu:   CpuUsage,
+  latestPoll:  number,
+  latestTime:  HrTime,
+  latestDelay: number,
 }
 
 /**
  * Provides the Node.JS-related information: RAM, CPU load.
  */
 class NodeInfo implements IInfoSection {
+
+  /**
+   * The interval at which the event loop delay is measured, in milliseconds.
+   *
+   * This spreads over multiple ticks of the loop to limit measurement costs.
+   */
+  public static EVENT_LOOP_INTERVAL: number = 10000;
+
   protected info: INodeInfoData;
 
   /**
@@ -47,9 +60,11 @@ class NodeInfo implements IInfoSection {
       ramHeapTotal: 0,
       ramHeapUsed:  0,
       ramRss:       0,
+      loopDelay:    0,
     };
     // Initialize the latestPoll/latestCpu properties.
     this.pollCpuUsage();
+    this.startEventLoopObserver();
   }
 
   /**
@@ -85,6 +100,10 @@ class NodeInfo implements IInfoSection {
         label: "Resident Set Size (heap, code segment, stack)",
         type: numberTypeName,
       },
+      loopDelay: {
+        label: "The delay of the Node.JS event loop",
+        type: numberTypeName,
+      }
     };
 
     return description;
@@ -103,6 +122,7 @@ class NodeInfo implements IInfoSection {
       ramHeapTotal: ram.heapTotal,
       ramHeapUsed:  ram.heapUsed,
       ramRss:       ram.rss,
+      loopDelay:    this.pollLoop(),
     };
     return result;
   }
@@ -133,6 +153,34 @@ class NodeInfo implements IInfoSection {
     };
     return result;
   }
+
+  protected pollLoop(): number {
+    return this.store.latestDelay;
+  }
+
+  /**
+   * Inspired by https://github.com/keymetrics/pmx
+   *
+   * @see https://github.com/keymetrics/pmx/blob/master/lib/probes/loop_delay.js
+   *
+   * Used under its MIT license, per pmx README.md
+   */
+  protected startEventLoopObserver() {
+    if (typeof(this.store.latestTime) === "undefined") {
+      this.store.latestTime = process.hrtime();
+    }
+
+    setInterval(() => {
+        const newTime: HrTime = process.hrtime();
+        const delay: number =
+          (newTime[0] - this.store.latestTime [0]) * 1E3 +
+          (newTime[1] - this.store.latestTime [1]) / 1e6 -
+          NodeInfo.EVENT_LOOP_INTERVAL;
+        this.store.latestTime = newTime;
+        this.store.latestDelay = delay;
+        console.log("Delay: ", Number(delay).toFixed(2));
+      }, NodeInfo.EVENT_LOOP_INTERVAL);
+  };
 }
 
 export {

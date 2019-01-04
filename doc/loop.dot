@@ -1,0 +1,21 @@
+digraph eventLoop {
+  label = "Node.JS Event Loop\nFrom https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/"
+  rotation = 27;
+
+  node [ shape=none ];
+
+  "1.0 Timers"          -> "2.0 I/O callbacks";
+  "2.0 I/O callbacks"   -> "3.0 Idle/Prepare";
+  "3.0 Idle/Prepare"    -> "4.0 Poll";
+  "4.0 Poll"            -> "5.0 Check";
+  "5.0 Check"           -> "6.0 Close callbacks";
+  "6.0 Close callbacks" -> "1.0 Timers";
+
+  edge [ dir=both, style=dotted ];
+  nextTickQueue -> "1.0 Timers"          [ taillabel="1.1",     headlabel="1.2   " ];
+  nextTickQueue -> "2.0 I/O callbacks"   [ taillabel="    2.1", headlabel="2.2   " ];
+  nextTickQueue -> "3.0 Idle/Prepare"    [ taillabel="3.1",     headlabel="3.2   " ];
+  nextTickQueue -> "4.0 Poll"            [ taillabel="4.1    ", headlabel="4.2"    ];
+  nextTickQueue -> "5.0 Check"           [ taillabel="5.1    ", headlabel="    5.2"];
+  nextTickQueue -> "6.0 Close callbacks" [ taillabel="6.1  ",   headlabel="6.2" ];
+}
