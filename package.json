@@ -8,7 +8,7 @@
     "url": "https://github.com/fgm/meteor_server_info/issues",
     "email": "support@osinet.fr"
   },
-  "description": "A NPM version of the Atmosephere percolate:meteor_server_info package.",
+  "description": "A NPM version of the Atmosphere percolate:meteor_server_info package.",
   "dependencies": {
     "@types/lodash": "^4.14.118",
     "lodash": "^4.17.11"

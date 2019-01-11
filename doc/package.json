@@ -1,0 +1,40 @@
+{
+  "author": {
+    "name": "Frederic G. MARAND",
+    "email": "fgm@osinet.fr",
+    "url": "http://blog.riff.org"
+  },
+  "bugs": {
+    "url": "https://github.com/fgm/meteor_server_info/issues",
+    "email": "support@osinet.fr"
+  },
+  "description": "A NPM version of the Atmosphere percolate:meteor_server_info package.",
+  "devDependencies": {
+    "@types/node": "^10.12.18",
+    "growl": "^1.10.5",
+    "npm": "^6.0.0",
+    "tslint": "^5.12.0",
+    "typescript": "^3.2.2"
+  },
+  "engineStrict": true,
+  "engines": {
+    "npm": ">=2.0"
+  },
+  "engines#1": "We specify npm >= 2 to get proper local dependency support in",
+  "engines#2": "application itself ; this is not a package dependency per se.",
+  "license": "GPL-3.0+",
+  "main": "lib/runner.js",
+  "name": "meteorserverinfodoc",
+  "optionalDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fgm/meteor_server_info.git"
+  },
+  "scripts": {
+    "clean": "rm -fr coverage node_modules",
+    "ts-compile": "rm -fr lib *.js; tsc --version; tsc -p tsconfig.json",
+    "ts-lint": "tslint -p tsconfig.json"
+  },
+  "typings": "lib/index.d.ts",
+  "version": "1.2.0"
+}

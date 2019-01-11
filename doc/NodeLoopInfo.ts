@@ -1,15 +1,23 @@
-const process = require('process');
+import { cpuUsage, hrtime } from "process";
+import CpuUsage = NodeJS.CpuUsage;
+import Timeout = NodeJS.Timeout;
+import Immediate = NodeJS.Immediate;
 
-/**
- * @property {BigInt} lastNsec
- *   The latest time measurement, in nanoseconds.
- * @property {function} log
- *   A "console.log(sprintf(" compatible function.
- */
+type WatchResult = [bigint, bigint];
+type LogFunction = (format: string, ...args: any[]) => {};
+
 class CounterBase {
-  constructor(log) {
-    this.lastNsec = BigInt(0);
-    this.log = log;
+  /**
+   * The latest time measurement, in nanoseconds.
+   */
+  protected lastNSec: bigint;
+
+  /**
+   * @param log
+   *   A "console.log(sprintf(" compatible function.
+   */
+  constructor(protected log: LogFunction) {
+    this.lastNSec = BigInt(0);
   }
 
   // Polling interval in milliseconds.
@@ -17,16 +25,18 @@ class CounterBase {
     return 1000;
   }
 
-  start() {
-    this.lastNsec = process.hrtime.bigint();
+  start(): Timeout {
+    // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
+    this.lastNSec = (hrtime as any).bigint();
     const timer = setInterval(this.watch.bind(this), CounterBase.LAP);
     return timer;
   }
 
-  watch() {
-    const prev = this.lastNsec;
-    const nsec = process.hrtime.bigint();
-    this.lastNsec = nsec;
+  watch(): WatchResult {
+    const prev = this.lastNSec;
+    // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
+    const nsec: bigint = (hrtime as any).bigint() as bigint;
+    this.lastNSec = nsec;
     return [prev, nsec];
   }
 }
@@ -42,14 +52,25 @@ class CounterBase {
  *
  * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 5% CPU load.
  *
- * @property {Immediate} immediateTimer
- * @property {number} tickCount
- *   The latest tick count.
  */
 class CostlyCounter extends CounterBase {
-  constructor(log) {
+  /**
+   * The current setImmediate() result.
+   */
+  protected immediateTimer?: Immediate;
+
+  /**
+   * The latest tick count.
+   */
+  protected tickCount: number;
+
+  /**
+   * @param log
+   *   A "console.log(sprintf(" compatible function.
+   */
+  constructor(protected log: LogFunction) {
     super(log);
-    this.immediateTimer = null;
+    this.immediateTimer = undefined;
     this.tickCount = 0;
   }
 
@@ -60,8 +81,8 @@ class CostlyCounter extends CounterBase {
    *
    * "When delay is [...] less than 1, the delay will be set to 1."
    */
-  counterImmediate() {
-    setTimeout(this.counterTimer.bind(this), 0);
+  counterImmediate(): NodeJS.Timeout {
+    return setTimeout(this.counterTimer.bind(this), 0);
   }
 
   counterTimer() {
@@ -69,17 +90,19 @@ class CostlyCounter extends CounterBase {
     this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
   }
 
-  start() {
+  start(): NodeJS.Timeout {
     super.start();
     // Start the actual counting loop.
-    this.counterImmediate();
+    return this.counterImmediate();
   }
 
   stop() {
-    clearImmediate(this.immediateTimer);
+    if (typeof this.immediateTimer != "undefined") {
+      clearImmediate(this.immediateTimer);
+    }
   }
 
-  watch() {
+  public watch(): WatchResult {
     const [prev, nsec] = super.watch();
 
     // The time elapsed since the previous watch() call.
@@ -106,6 +129,7 @@ class CostlyCounter extends CounterBase {
     );
 
     this.tickCount = 0;
+    return [prev, nsec];
   }
 }
 
@@ -119,34 +143,31 @@ class CostlyCounter extends CounterBase {
  * - its code is cheap and runs only once over 1000 ticks too.
  *
  * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes less than 0.5% CPU load.
- *
- * @property {boolean} keep
- *   Keep the event loop running just for this timer ?
  */
 class CheapCounter extends CounterBase {
-
-  constructor(keep = true, log) {
+  constructor(protected keep: boolean = true, log: LogFunction) {
     super(log);
     this.keep = keep;
   }
 
-  start() {
+  start(): NodeJS.Timeout {
     const timer = super.start();
     if (!this.keep) {
       // Don't keep the event loop running just for us.
       timer.unref();
     }
+    return timer;
   }
 
-  watch() {
+  public watch(): WatchResult {
     const [prev, nsec] = super.watch();
     const actualLapMsec = Number(nsec - prev) / 1E6;
     const expectedLapMsec = CheapCounter.LAP;
 
-    const diffMsec = Math.max((actualLapMsec - expectedLapMsec).toFixed(2), 0);
+    const diffMsec = Math.max(parseFloat((actualLapMsec - expectedLapMsec).toFixed(2)), 0);
     this.log('msec for polling loop: expected %4d, actual %7d, lag %6.2f',
       expectedLapMsec, actualLapMsec, diffMsec);
-
+    return [prev, nsec]
   }
 }
 
@@ -159,18 +180,24 @@ class CheapCounter extends CounterBase {
  *   sees the "immediate" job queues and does not linger in the poll phase.
  * - its code is cheap but runs on each tick.
  *
- * FIXME On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 5% CPU load.
- *
- * @property {Immediate} immediateTimer
- * @property {number} tickCount
- *   The latest tick count.
+ * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 5% CPU load.
  */
 class NrCounter extends CounterBase {
-  constructor(log) {
+  protected immediateTimer?: NodeJS.Immediate;
+  protected latestCounterUsage: CpuUsage;
+  protected latestWatchUsage: CpuUsage;
+  protected maxCpuMsec: number;
+  /**
+   * The latest tick count.
+   */
+  protected tickCount: number;
+
+  constructor(log: LogFunction) {
     super(log);
-    this.immediateTimer = null;
+    this.immediateTimer = undefined;
+    this.latestCounterUsage = this.latestWatchUsage = cpuUsage();
+    this.maxCpuMsec = 0;
     this.tickCount = 0;
-    this.latestUsage = process.cpuUsage();
   }
 
   /**
@@ -180,29 +207,53 @@ class NrCounter extends CounterBase {
    *
    * "When delay is [...] less than 1, the delay will be set to 1."
    */
-  counterImmediate() {
-    setTimeout(this.counterTimer.bind(this), 0);
+  counterImmediate(): NodeJS.Timeout {
+    return setTimeout(this.counterTimer.bind(this), 0);
+  }
+
+  /**
+   * Resetting max(cpuMsec) and return its value.
+   *
+   * @return {number}
+   *   max(cpuMsecPerTick) since last call to counterReset().
+   */
+  counterReset() {
+    const max = this.maxCpuMsec;
+    this.maxCpuMsec = 0;
+    return max;
   }
 
   counterTimer() {
+    const usage = cpuUsage();
+    const { user, system } = cpuUsage(this.latestCounterUsage);
+    const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
+    if (cpuMsecSinceLast > this.maxCpuMsec) {
+      this.maxCpuMsec = cpuMsecSinceLast;
+    }
+
     this.tickCount++;
     this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
+    this.latestCounterUsage = usage;
   }
 
-  start() {
+  start(): NodeJS.Timeout {
     super.start();
+    // Initialize selector counters (max/min).
+    this.counterReset();
     // Start the actual counting loop.
-    this.counterImmediate();
+    return this.counterImmediate();
   }
 
   stop() {
-    clearImmediate(this.immediateTimer);
+    if (typeof this.immediateTimer != "undefined") {
+      clearImmediate(this.immediateTimer);
+    }
   }
 
-  watch() {
+  public watch(): WatchResult {
     const [prev, nsec] = super.watch();
-    const usage = process.cpuUsage();
-    const { user, system } = process.cpuUsage(this.latestUsage);
+    const usage = cpuUsage();
+    const { user, system } = cpuUsage(this.latestWatchUsage);
     const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
 
     // The actual number of loops performed since the previous watch() call.
@@ -213,12 +264,13 @@ class NrCounter extends CounterBase {
     const clockMsec = Number(nsec - prev) / 1E6; // nsec to msec.
 
     const ticksPerMin = tickCount / clockMsec * 60 * 1000;
-    const msecPerTick = cpuMsecSinceLast / tickCount;
+    const cpuMsecPerTick = cpuMsecSinceLast / tickCount;
     this.log('%4d ticks in %4d msec => Ticks/minute: %5d, CPU usage %5d msec => CPU/tick %6.3f msec',
-      tickCount, clockMsec, ticksPerMin, cpuMsecSinceLast, msecPerTick);
+      tickCount, clockMsec, ticksPerMin, cpuMsecSinceLast, cpuMsecPerTick);
 
     this.tickCount = 0;
-    this.latestUsage = usage;
+    this.latestWatchUsage = usage;
+    return [prev, nsec];
   }
 }
 
