@@ -4,7 +4,15 @@ import Timeout = NodeJS.Timeout;
 import Immediate = NodeJS.Immediate;
 
 type WatchResult = [bigint, bigint];
-type LogFunction = (format: string, ...args: any[]) => {};
+type LogFunction = (format: string, ...args: any[]) => void;
+
+/**
+ * nullLogger is a silent logger usable by Counter classes.
+ *
+ * @param {string}_format
+ * @param {any[]} _args
+ */
+const nullLogger: LogFunction = (_format: string, ..._args: any[]): void => { return; };
 
 class CounterBase {
   /**
@@ -16,23 +24,23 @@ class CounterBase {
    * @param log
    *   A "console.log(sprintf(" compatible function.
    */
-  constructor(protected log: LogFunction) {
+  constructor(protected log: LogFunction = nullLogger) {
     this.lastNSec = BigInt(0);
   }
 
   // Polling interval in milliseconds.
-  static get LAP() {
+  public static get LAP() {
     return 1000;
   }
 
-  start(): Timeout {
+  public start(): Timeout {
     // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
     this.lastNSec = (hrtime as any).bigint();
     const timer = setInterval(this.watch.bind(this), CounterBase.LAP);
     return timer;
   }
 
-  watch(): WatchResult {
+  public watch(): WatchResult {
     const prev = this.lastNSec;
     // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
     const nsec: bigint = (hrtime as any).bigint() as bigint;
@@ -68,36 +76,20 @@ class CostlyCounter extends CounterBase {
    * @param log
    *   A "console.log(sprintf(" compatible function.
    */
-  constructor(protected log: LogFunction) {
+  constructor(protected log: LogFunction = nullLogger) {
     super(log);
     this.immediateTimer = undefined;
     this.tickCount = 0;
   }
 
-  /**
-   * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
-   *
-   * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
-   *
-   * "When delay is [...] less than 1, the delay will be set to 1."
-   */
-  counterImmediate(): NodeJS.Timeout {
-    return setTimeout(this.counterTimer.bind(this), 0);
-  }
-
-  counterTimer() {
-    this.tickCount++;
-    this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
-  }
-
-  start(): NodeJS.Timeout {
+  public start(): NodeJS.Timeout {
     super.start();
     // Start the actual counting loop.
     return this.counterImmediate();
   }
 
-  stop() {
-    if (typeof this.immediateTimer != "undefined") {
+  public stop() {
+    if (typeof this.immediateTimer !== "undefined") {
       clearImmediate(this.immediateTimer);
     }
   }
@@ -124,12 +116,28 @@ class CostlyCounter extends CounterBase {
       lag = 0;
     }
     const invidualLapµsec = Math.round(actualLapµsec / effectiveLoopCount);
-    this.log('µsec for %4d loops: expected %7d, actual %7d, diff %6d. Lag per loop: %6.2f, Time per loop: %6d',
-      effectiveLoopCount, expectedLapµsec, actualLapµsec, diffµsec, lag, invidualLapµsec
+    this.log("µsec for %4d loops: expected %7d, actual %7d, diff %6d. Lag per loop: %6.2f, Time per loop: %6d",
+      effectiveLoopCount, expectedLapµsec, actualLapµsec, diffµsec, lag, invidualLapµsec,
     );
 
     this.tickCount = 0;
     return [prev, nsec];
+  }
+
+  /**
+   * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
+   *
+   * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
+   *
+   * "When delay is [...] less than 1, the delay will be set to 1."
+   */
+  protected counterImmediate(): NodeJS.Timeout {
+    return setTimeout(this.counterTimer.bind(this), 0);
+  }
+
+  protected counterTimer() {
+    this.tickCount++;
+    this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
   }
 }
 
@@ -145,12 +153,12 @@ class CostlyCounter extends CounterBase {
  * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes less than 0.5% CPU load.
  */
 class CheapCounter extends CounterBase {
-  constructor(protected keep: boolean = true, log: LogFunction) {
+  constructor(protected keep: boolean = true, log: LogFunction = nullLogger) {
     super(log);
     this.keep = keep;
   }
 
-  start(): NodeJS.Timeout {
+  public start(): NodeJS.Timeout {
     const timer = super.start();
     if (!this.keep) {
       // Don't keep the event loop running just for us.
@@ -165,9 +173,10 @@ class CheapCounter extends CounterBase {
     const expectedLapMsec = CheapCounter.LAP;
 
     const diffMsec = Math.max(parseFloat((actualLapMsec - expectedLapMsec).toFixed(2)), 0);
-    this.log('msec for polling loop: expected %4d, actual %7d, lag %6.2f',
-      expectedLapMsec, actualLapMsec, diffMsec);
-    return [prev, nsec]
+    this.log("msec for polling loop: expected %4d, actual %7d, lag %6.2f",
+      expectedLapMsec, actualLapMsec, diffMsec,
+    );
+    return [prev, nsec];
   }
 }
 
@@ -192,7 +201,7 @@ class NrCounter extends CounterBase {
    */
   protected tickCount: number;
 
-  constructor(log: LogFunction) {
+  constructor(log: LogFunction = nullLogger) {
     super(log);
     this.immediateTimer = undefined;
     this.latestCounterUsage = this.latestWatchUsage = cpuUsage();
@@ -201,42 +210,18 @@ class NrCounter extends CounterBase {
   }
 
   /**
-   * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
-   *
-   * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
-   *
-   * "When delay is [...] less than 1, the delay will be set to 1."
-   */
-  counterImmediate(): NodeJS.Timeout {
-    return setTimeout(this.counterTimer.bind(this), 0);
-  }
-
-  /**
    * Resetting max(cpuMsec) and return its value.
    *
    * @return {number}
    *   max(cpuMsecPerTick) since last call to counterReset().
    */
-  counterReset() {
+  public counterReset() {
     const max = this.maxCpuMsec;
     this.maxCpuMsec = 0;
     return max;
   }
 
-  counterTimer() {
-    const usage = cpuUsage();
-    const { user, system } = cpuUsage(this.latestCounterUsage);
-    const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
-    if (cpuMsecSinceLast > this.maxCpuMsec) {
-      this.maxCpuMsec = cpuMsecSinceLast;
-    }
-
-    this.tickCount++;
-    this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
-    this.latestCounterUsage = usage;
-  }
-
-  start(): NodeJS.Timeout {
+  public start(): NodeJS.Timeout {
     super.start();
     // Initialize selector counters (max/min).
     this.counterReset();
@@ -244,8 +229,8 @@ class NrCounter extends CounterBase {
     return this.counterImmediate();
   }
 
-  stop() {
-    if (typeof this.immediateTimer != "undefined") {
+  public stop() {
+    if (typeof this.immediateTimer !== "undefined") {
       clearImmediate(this.immediateTimer);
     }
   }
@@ -265,18 +250,46 @@ class NrCounter extends CounterBase {
 
     const ticksPerMin = tickCount / clockMsec * 60 * 1000;
     const cpuMsecPerTick = cpuMsecSinceLast / tickCount;
-    this.log('%4d ticks in %4d msec => Ticks/minute: %5d, CPU usage %5d msec => CPU/tick %6.3f msec',
-      tickCount, clockMsec, ticksPerMin, cpuMsecSinceLast, cpuMsecPerTick);
+    this.log("%4d ticks in %4d msec => Ticks/minute: %5d, CPU usage %5d msec => CPU/tick %6.3f msec",
+      tickCount, clockMsec, ticksPerMin, cpuMsecSinceLast, cpuMsecPerTick,
+    );
 
     this.tickCount = 0;
     this.latestWatchUsage = usage;
     return [prev, nsec];
   }
+
+  /**
+   * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
+   *
+   * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
+   *
+   * "When delay is [...] less than 1, the delay will be set to 1."
+   */
+  protected counterImmediate(): NodeJS.Timeout {
+    return setTimeout(this.counterTimer.bind(this), 0);
+  }
+
+  protected counterTimer() {
+    const usage = cpuUsage();
+    const { user, system } = cpuUsage(this.latestCounterUsage);
+    const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
+    if (cpuMsecSinceLast > this.maxCpuMsec) {
+      this.maxCpuMsec = cpuMsecSinceLast;
+    }
+
+    this.tickCount++;
+    this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
+    this.latestCounterUsage = usage;
+  }
 }
 
-module.exports = {
+export {
   CheapCounter,
   CostlyCounter,
   CounterBase,
+  LogFunction,
   NrCounter,
+
+  nullLogger,
 };

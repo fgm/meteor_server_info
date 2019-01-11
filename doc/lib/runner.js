@@ -19,15 +19,24 @@ var __spread = (this && this.__spread) || function () {
     for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
     return ar;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require('fs');
-var crypto = require('crypto');
-var sprintf = require("sprintf-js").sprintf;
+var crypto_1 = require("crypto");
+var fs_1 = __importDefault(require("fs"));
+var sprintf_js_1 = require("sprintf-js");
 var process_1 = require("process");
-var _a = require('./NodeLoopInfo'), CheapCounter = _a.CheapCounter, CostlyCounter = _a.CostlyCounter, CounterBase = _a.CounterBase, NrCounter = _a.NrCounter;
+var NodeLoopInfo_1 = require("./NodeLoopInfo");
 // ---- Tools ------------------------------------------------------------------
 var logT0 = Date.now();
-function log(format) {
+/**
+ * timingLog wraps a sprintf() call by prepending the time since command start.
+ *
+ * @param {string} format
+ * @param {any[]} args
+ */
+var timingLog = function (format) {
     var args = [];
     for (var _i = 1; _i < arguments.length; _i++) {
         args[_i - 1] = arguments[_i];
@@ -36,16 +45,20 @@ function log(format) {
     var logTime = new Date(Date.now() - logT0).getTime();
     var formattedLogTime = (logTime / 1000).toFixed(3);
     args.unshift(formattedLogTime);
-    console.log(sprintf.apply(void 0, __spread([logFormat], args)));
-}
+    // tslint:disable-next-line:no-console
+    console.log(sprintf_js_1.sprintf.apply(void 0, __spread([logFormat], args)));
+};
+exports.timingLog = timingLog;
 /**
  * Active sync wait.
  */
 function milliwait(msec) {
     var m0 = Date.now();
     while (Date.now() - m0 < msec) {
+        // Active loop.
     }
 }
+exports.milliwait = milliwait;
 /**
  * Read and hash a disk file.
  *
@@ -57,25 +70,25 @@ function milliwait(msec) {
  * @param file
  */
 function read(file) {
-    if (file === void 0) { file = 'random'; }
-    console.log('Starting to read');
+    if (file === void 0) { file = "random"; }
+    log("Starting to read");
     // This part is supposed to be performed by a background thread so it should not impact the loop (but it does).
     // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
     var t0 = process_1.hrtime.bigint();
-    fs.readFile(file, function (err, res) {
+    fs_1.default.readFile(file, function (err, res) {
         if (err) {
             throw err;
         }
         // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
         var t1 = process_1.hrtime.bigint();
-        console.log("Read " + res.length + " bytes in " + (Number(t1 - t0) / 1E9).toFixed(3) + " seconds.");
+        log("Read " + res.length + " bytes in " + (Number(t1 - t0) / 1E9).toFixed(3) + " seconds.");
         setTimeout(function () {
             // This part does impact the loop, although it does not completely block.
-            console.log("Using encryption");
-            var hash = crypto.createHash('sha256', "not so secret")
+            log("Using encryption");
+            var hash = crypto_1.createHash("sha256")
                 .update(res)
-                .digest('hex');
-            console.log("Encrypted bytes: ", hash.length);
+                .digest("hex");
+            log("Encrypted bytes: %d", hash.length);
         }, 2000);
     });
 }
@@ -91,47 +104,46 @@ function badFibonacci(n) {
     return badFibonacci(n - 1) + badFibonacci(n - 2);
 }
 // ---- Main logic -------------------------------------------------------------
+var log = timingLog;
 if (process_1.argv.length < 2 || process_1.argv.length > 3) {
-    var path = process_1.argv[1].split('/').pop();
-    console.log("Syntax: " + process_1.argv0 + " " + path + " [<use costly ?>]\n\nWithout a trueish value for the optional <use costly ?> argument, " + path + " will use the cheap method.\n  \nIn both cases it will read a ./random file, which could be generated using e.g.:\n  dd if=/dev/urandom of=random bs=1048576 count=1024");
+    var path = process_1.argv[1].split("/").pop();
+    log("Syntax: " + process_1.argv0 + " " + path + " [<use costly ?>]\n\nWithout a trueish value for the optional <use costly ?> argument, " + path + " will use the cheap method.\n\nIn both cases it will read a ./random file, which could be generated using e.g.:\n  dd if=/dev/urandom of=random bs=1048576 count=1024");
     process_1.exit(1);
 }
-console.log("PID: " + process_1.pid + ", Loop duration " + CounterBase.LAP + " msec.");
-var type = parseInt(process_1.argv[2]);
+log = timingLog;
+log("PID: " + process_1.pid + ", Loop duration " + NodeLoopInfo_1.CounterBase.LAP + " msec.");
+var type = parseInt(process_1.argv[2], 10);
 if (isNaN(type)) {
     type = 0;
 }
 var counter;
 switch (type) {
     default:
-        console.log("Testing with cheap counter");
-        (counter = new CheapCounter(true, log)).start();
+        log("Testing with cheap counter");
+        (counter = new NodeLoopInfo_1.CheapCounter(true, log)).start();
         setTimeout(read, 3000);
         break;
     case 1:
-        console.log("Testing with costly counter");
-        (counter = new CostlyCounter(log)).start();
+        log("Testing with costly counter");
+        (counter = new NodeLoopInfo_1.CostlyCounter(log)).start();
         setTimeout(read, 3000);
         break;
     case 2:
-        console.log("Testing with NR counter");
-        counter = new NrCounter(log);
+        log("Testing with NR counter");
+        counter = new NodeLoopInfo_1.NrCounter(log);
         counter.start();
         setTimeout(read, 3000);
         setTimeout(function () {
-            console.log("Locking CPU");
+            log("Locking CPU");
             badFibonacci(44);
-            console.log("CPU unlocked");
+            log("CPU unlocked");
         }, 12000);
         setInterval(function () {
             log("Max CPU time per tick: %6.2f", counter.counterReset());
         }, 2000);
 }
 setTimeout(function () {
-    console.log("Exiting");
+    log("Exiting");
     process_1.exit();
 }, 30000);
-module.exports = {
-    milliwait: milliwait,
-};
 //# sourceMappingURL=runner.js.map

@@ -30,12 +30,27 @@ var __read = (this && this.__read) || function (o, n) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var process_1 = require("process");
+/**
+ * nullLogger is a silent logger usable by Counter classes.
+ *
+ * @param {string}_format
+ * @param {any[]} _args
+ */
+var nullLogger = function (_format) {
+    var _args = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        _args[_i - 1] = arguments[_i];
+    }
+    return;
+};
+exports.nullLogger = nullLogger;
 var CounterBase = /** @class */ (function () {
     /**
      * @param log
      *   A "console.log(sprintf(" compatible function.
      */
     function CounterBase(log) {
+        if (log === void 0) { log = nullLogger; }
         this.log = log;
         this.lastNSec = BigInt(0);
     }
@@ -62,6 +77,7 @@ var CounterBase = /** @class */ (function () {
     };
     return CounterBase;
 }());
+exports.CounterBase = CounterBase;
 /**
  * This counter actually counts ticks by jumping to and fro the loop phases.
  *
@@ -81,33 +97,20 @@ var CostlyCounter = /** @class */ (function (_super) {
      *   A "console.log(sprintf(" compatible function.
      */
     function CostlyCounter(log) {
+        if (log === void 0) { log = nullLogger; }
         var _this = _super.call(this, log) || this;
         _this.log = log;
         _this.immediateTimer = undefined;
         _this.tickCount = 0;
         return _this;
     }
-    /**
-     * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
-     *
-     * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
-     *
-     * "When delay is [...] less than 1, the delay will be set to 1."
-     */
-    CostlyCounter.prototype.counterImmediate = function () {
-        return setTimeout(this.counterTimer.bind(this), 0);
-    };
-    CostlyCounter.prototype.counterTimer = function () {
-        this.tickCount++;
-        this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
-    };
     CostlyCounter.prototype.start = function () {
         _super.prototype.start.call(this);
         // Start the actual counting loop.
         return this.counterImmediate();
     };
     CostlyCounter.prototype.stop = function () {
-        if (typeof this.immediateTimer != "undefined") {
+        if (typeof this.immediateTimer !== "undefined") {
             clearImmediate(this.immediateTimer);
         }
     };
@@ -128,12 +131,27 @@ var CostlyCounter = /** @class */ (function (_super) {
             lag = 0;
         }
         var invidualLapµsec = Math.round(actualLapµsec / effectiveLoopCount);
-        this.log('µsec for %4d loops: expected %7d, actual %7d, diff %6d. Lag per loop: %6.2f, Time per loop: %6d', effectiveLoopCount, expectedLapµsec, actualLapµsec, diffµsec, lag, invidualLapµsec);
+        this.log("µsec for %4d loops: expected %7d, actual %7d, diff %6d. Lag per loop: %6.2f, Time per loop: %6d", effectiveLoopCount, expectedLapµsec, actualLapµsec, diffµsec, lag, invidualLapµsec);
         this.tickCount = 0;
         return [prev, nsec];
     };
+    /**
+     * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
+     *
+     * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
+     *
+     * "When delay is [...] less than 1, the delay will be set to 1."
+     */
+    CostlyCounter.prototype.counterImmediate = function () {
+        return setTimeout(this.counterTimer.bind(this), 0);
+    };
+    CostlyCounter.prototype.counterTimer = function () {
+        this.tickCount++;
+        this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
+    };
     return CostlyCounter;
 }(CounterBase));
+exports.CostlyCounter = CostlyCounter;
 /**
  *
  * It is cheap because:
@@ -149,6 +167,7 @@ var CheapCounter = /** @class */ (function (_super) {
     __extends(CheapCounter, _super);
     function CheapCounter(keep, log) {
         if (keep === void 0) { keep = true; }
+        if (log === void 0) { log = nullLogger; }
         var _this = _super.call(this, log) || this;
         _this.keep = keep;
         _this.keep = keep;
@@ -167,11 +186,12 @@ var CheapCounter = /** @class */ (function (_super) {
         var actualLapMsec = Number(nsec - prev) / 1E6;
         var expectedLapMsec = CheapCounter.LAP;
         var diffMsec = Math.max(parseFloat((actualLapMsec - expectedLapMsec).toFixed(2)), 0);
-        this.log('msec for polling loop: expected %4d, actual %7d, lag %6.2f', expectedLapMsec, actualLapMsec, diffMsec);
+        this.log("msec for polling loop: expected %4d, actual %7d, lag %6.2f", expectedLapMsec, actualLapMsec, diffMsec);
         return [prev, nsec];
     };
     return CheapCounter;
 }(CounterBase));
+exports.CheapCounter = CheapCounter;
 /**
  * This counter attempts to mimic NewRelics "CPU time per tick" metric.
  *
@@ -186,6 +206,7 @@ var CheapCounter = /** @class */ (function (_super) {
 var NrCounter = /** @class */ (function (_super) {
     __extends(NrCounter, _super);
     function NrCounter(log) {
+        if (log === void 0) { log = nullLogger; }
         var _this = _super.call(this, log) || this;
         _this.immediateTimer = undefined;
         _this.latestCounterUsage = _this.latestWatchUsage = process_1.cpuUsage();
@@ -193,16 +214,6 @@ var NrCounter = /** @class */ (function (_super) {
         _this.tickCount = 0;
         return _this;
     }
-    /**
-     * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
-     *
-     * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
-     *
-     * "When delay is [...] less than 1, the delay will be set to 1."
-     */
-    NrCounter.prototype.counterImmediate = function () {
-        return setTimeout(this.counterTimer.bind(this), 0);
-    };
     /**
      * Resetting max(cpuMsec) and return its value.
      *
@@ -214,17 +225,6 @@ var NrCounter = /** @class */ (function (_super) {
         this.maxCpuMsec = 0;
         return max;
     };
-    NrCounter.prototype.counterTimer = function () {
-        var usage = process_1.cpuUsage();
-        var _a = process_1.cpuUsage(this.latestCounterUsage), user = _a.user, system = _a.system;
-        var cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
-        if (cpuMsecSinceLast > this.maxCpuMsec) {
-            this.maxCpuMsec = cpuMsecSinceLast;
-        }
-        this.tickCount++;
-        this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
-        this.latestCounterUsage = usage;
-    };
     NrCounter.prototype.start = function () {
         _super.prototype.start.call(this);
         // Initialize selector counters (max/min).
@@ -233,7 +233,7 @@ var NrCounter = /** @class */ (function (_super) {
         return this.counterImmediate();
     };
     NrCounter.prototype.stop = function () {
-        if (typeof this.immediateTimer != "undefined") {
+        if (typeof this.immediateTimer !== "undefined") {
             clearImmediate(this.immediateTimer);
         }
     };
@@ -249,17 +249,33 @@ var NrCounter = /** @class */ (function (_super) {
         var clockMsec = Number(nsec - prev) / 1E6; // nsec to msec.
         var ticksPerMin = tickCount / clockMsec * 60 * 1000;
         var cpuMsecPerTick = cpuMsecSinceLast / tickCount;
-        this.log('%4d ticks in %4d msec => Ticks/minute: %5d, CPU usage %5d msec => CPU/tick %6.3f msec', tickCount, clockMsec, ticksPerMin, cpuMsecSinceLast, cpuMsecPerTick);
+        this.log("%4d ticks in %4d msec => Ticks/minute: %5d, CPU usage %5d msec => CPU/tick %6.3f msec", tickCount, clockMsec, ticksPerMin, cpuMsecSinceLast, cpuMsecPerTick);
         this.tickCount = 0;
         this.latestWatchUsage = usage;
         return [prev, nsec];
     };
+    /**
+     * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
+     *
+     * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
+     *
+     * "When delay is [...] less than 1, the delay will be set to 1."
+     */
+    NrCounter.prototype.counterImmediate = function () {
+        return setTimeout(this.counterTimer.bind(this), 0);
+    };
+    NrCounter.prototype.counterTimer = function () {
+        var usage = process_1.cpuUsage();
+        var _a = process_1.cpuUsage(this.latestCounterUsage), user = _a.user, system = _a.system;
+        var cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
+        if (cpuMsecSinceLast > this.maxCpuMsec) {
+            this.maxCpuMsec = cpuMsecSinceLast;
+        }
+        this.tickCount++;
+        this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
+        this.latestCounterUsage = usage;
+    };
     return NrCounter;
 }(CounterBase));
-module.exports = {
-    CheapCounter: CheapCounter,
-    CostlyCounter: CostlyCounter,
-    CounterBase: CounterBase,
-    NrCounter: NrCounter,
-};
+exports.NrCounter = NrCounter;
 //# sourceMappingURL=NodeLoopInfo.js.map
