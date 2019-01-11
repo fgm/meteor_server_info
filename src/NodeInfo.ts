@@ -56,11 +56,11 @@ class NodeInfo implements IInfoSection {
     this.info = {
       cpuSystem:    0,
       cpuUser:      0,
+      loopDelay:    0,
       ramExternal:  0,
       ramHeapTotal: 0,
       ramHeapUsed:  0,
       ramRss:       0,
-      loopDelay:    0,
     };
     // Initialize the latestPoll/latestCpu properties.
     this.pollCpuUsage();
@@ -84,6 +84,10 @@ class NodeInfo implements IInfoSection {
         label: "CPU user seconds since last sample. May be > 1 on multiple cores.",
         type: numberTypeName,
       },
+      loopDelay: {
+        label: "The delay of the Node.JS event loop",
+        type: numberTypeName,
+      },
       ramExternal: {
         label: "C++ memory bound to V8 JS objects",
         type: numberTypeName,
@@ -100,10 +104,6 @@ class NodeInfo implements IInfoSection {
         label: "Resident Set Size (heap, code segment, stack)",
         type: numberTypeName,
       },
-      loopDelay: {
-        label: "The delay of the Node.JS event loop",
-        type: numberTypeName,
-      }
     };
 
     return description;
@@ -118,11 +118,11 @@ class NodeInfo implements IInfoSection {
     const result: INodeInfoData      = {
       cpuSystem:    cpu.system,
       cpuUser:      cpu.user,
+      loopDelay:    this.pollLoop(),
       ramExternal:  ram.external,
       ramHeapTotal: ram.heapTotal,
       ramHeapUsed:  ram.heapUsed,
       ramRss:       ram.rss,
-      loopDelay:    this.pollLoop(),
     };
     return result;
   }
@@ -178,9 +178,10 @@ class NodeInfo implements IInfoSection {
           NodeInfo.EVENT_LOOP_INTERVAL;
         this.store.latestTime = newTime;
         this.store.latestDelay = delay;
+        // tslint:disable-next-line:no-console
         console.log("Delay: ", Number(delay).toFixed(2));
       }, NodeInfo.EVENT_LOOP_INTERVAL);
-  };
+  }
 }
 
 export {

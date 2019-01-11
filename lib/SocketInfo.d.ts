@@ -18,7 +18,6 @@ declare class SocketInfo implements IInfoSection {
      * @constructor
      */
     constructor(sockets: any[]);
-    private defaultInfo;
     /**
      * Describe the metrics provided by this service.
      *
@@ -37,5 +36,6 @@ declare class SocketInfo implements IInfoSection {
      *   - nSocketsWithLivedataSessions: the number of sockets with live data.
      */
     getInfo(): ISocketInfoData;
+    private defaultInfo;
 }
 export { SocketInfo, ISocketInfoData, };

@@ -1,4 +1,4 @@
-import { LogFunction } from "./NodeLoopInfo";
+import { LogFunction } from "./NodeCounter/CounterBase";
 /**
  * timingLog wraps a sprintf() call by prepending the time since command start.
  *

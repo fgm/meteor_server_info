@@ -34,16 +34,6 @@ class MongoInfo implements IInfoSection {
     this.muxes = mongoInternals.defaultRemoteCollectionDriver().mongo._observeMultiplexers;
   }
 
-  private defaultInfo(): IMongoInfoData {
-    return {
-      nObserveHandles: 0,
-      oplogObserveHandles: new Map(),
-      oplogObserveHandlesCount: 0,
-      pollingObserveHandles: new Map(),
-      pollingObserveHandlesCount: 0,
-    };
-  }
-
   /**
    * Describe the metrics provided by this service.
    *
@@ -139,6 +129,16 @@ class MongoInfo implements IInfoSection {
     const collectionName = driver._cursorDescription.collectionName;
     const observerType = driver._usesOplog ? "oplogObserveHandles" : "pollingObserveHandles";
     this.buildCollectionInfo(observerType, collectionName);
+  }
+
+  private defaultInfo(): IMongoInfoData {
+    return {
+      nObserveHandles: 0,
+      oplogObserveHandles: new Map(),
+      oplogObserveHandlesCount: 0,
+      pollingObserveHandles: new Map(),
+      pollingObserveHandlesCount: 0,
+    };
   }
 }
 

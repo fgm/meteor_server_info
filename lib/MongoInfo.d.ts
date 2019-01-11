@@ -26,7 +26,6 @@ declare class MongoInfo implements IInfoSection {
      * @constructor
      */
     constructor(mongoInternals: any);
-    private defaultInfo;
     /**
      * Describe the metrics provided by this service.
      *
@@ -75,5 +74,6 @@ declare class MongoInfo implements IInfoSection {
      * @private
      */
     protected buildHandleInfo(handle: IObserverHandle): void;
+    private defaultInfo;
 }
 export { MongoInfo, };

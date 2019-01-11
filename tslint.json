@@ -6,7 +6,8 @@
   "jsRules": {},
   "rules": {
     "align": [true, "parameters", "statements"],
-    "max-classes-per-file": [true, 1, "exclude-class-expressions"],
+    "max-classes-per-file": [true, 5, "exclude-class-expressions"],
+    "no-console": true,
     "no-string-literal": false,
     "semicolon": [true, "always", "ignore-interfaces"],
     "typedef-whitespace": [true, "nospace", "space"],

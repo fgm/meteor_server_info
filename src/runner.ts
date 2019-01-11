@@ -4,13 +4,10 @@ import { sprintf } from "sprintf-js";
 
 import { argv, argv0, exit, hrtime, pid } from "process";
 
-import {
-  CheapCounter,
-  CostlyCounter,
-  CounterBase,
-  LogFunction,
-  NrCounter,
-} from "./NodeLoopInfo";
+import { CheapCounter } from "./NodeCounter/CheapCounter";
+import { CostlyCounter } from "./NodeCounter/CostlyCounter";
+import { CounterBase, LogFunction } from "./NodeCounter/CounterBase";
+import { NrCounter } from "./NodeCounter/NrCounter";
 
 // ---- Tools ------------------------------------------------------------------
 
