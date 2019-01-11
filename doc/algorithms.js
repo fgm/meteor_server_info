@@ -150,8 +150,81 @@ class CheapCounter extends CounterBase {
   }
 }
 
+/**
+ * This counter attempts to mimic NewRelics "CPU time per tick" metric.
+ *
+ * It is expensive because:
+ *
+ * - it prevents the CPU optimization in the poll phase from running because it
+ *   sees the "immediate" job queues and does not linger in the poll phase.
+ * - its code is cheap but runs on each tick.
+ *
+ * FIXME On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 5% CPU load.
+ *
+ * @property {Immediate} immediateTimer
+ * @property {number} tickCount
+ *   The latest tick count.
+ */
+class NrCounter extends CounterBase {
+  constructor(log) {
+    super(log);
+    this.immediateTimer = null;
+    this.tickCount = 0;
+    this.latestUsage = process.cpuUsage();
+  }
+
+  /**
+   * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
+   *
+   * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
+   *
+   * "When delay is [...] less than 1, the delay will be set to 1."
+   */
+  counterImmediate() {
+    setTimeout(this.counterTimer.bind(this), 0);
+  }
+
+  counterTimer() {
+    this.tickCount++;
+    this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
+  }
+
+  start() {
+    super.start();
+    // Start the actual counting loop.
+    this.counterImmediate();
+  }
+
+  stop() {
+    clearImmediate(this.immediateTimer);
+  }
+
+  watch() {
+    const [prev, nsec] = super.watch();
+    const usage = process.cpuUsage();
+    const { user, system } = process.cpuUsage(this.latestUsage);
+    const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
+
+    // The actual number of loops performed since the previous watch() call.
+    // Math.max is used in case this code runs before the loop counter when LAP <= 1 msec.
+    const tickCount = Math.max(this.tickCount, 1);
+
+    // The time elapsed since the previous watch() call.
+    const clockMsec = Number(nsec - prev) / 1E6; // nsec to msec.
+
+    const ticksPerMin = tickCount / clockMsec * 60 * 1000;
+    const msecPerTick = cpuMsecSinceLast / tickCount;
+    this.log('%4d ticks in %4d msec => Ticks/minute: %5d, CPU usage %5d msec => CPU/tick %6.3f msec',
+      tickCount, clockMsec, ticksPerMin, cpuMsecSinceLast, msecPerTick);
+
+    this.tickCount = 0;
+    this.latestUsage = usage;
+  }
+}
+
 module.exports = {
   CheapCounter,
   CostlyCounter,
   CounterBase,
+  NrCounter,
 };
