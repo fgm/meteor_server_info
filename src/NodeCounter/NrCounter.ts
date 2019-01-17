@@ -18,11 +18,16 @@ class NrCounter extends CounterBase {
   protected latestCounterUsage: CpuUsage;
   protected latestWatchUsage: CpuUsage;
   protected maxCpuMsec: number;
+
   /**
    * The latest tick count.
    */
   protected tickCount: number;
 
+  /**
+   * @param log
+   *   A "console.log(sprintf(" compatible function.
+   */
   constructor(log: LogFunction = nullLogger) {
     super(log);
     this.immediateTimer = undefined;
@@ -43,6 +48,12 @@ class NrCounter extends CounterBase {
     return max;
   }
 
+  /**
+   * Start the metric collection.
+   *
+   * @return
+   *   A timer instance usable with this.stop() to stop collection.
+   */
   public start(): NodeJS.Timeout {
     super.start();
     // Initialize selector counters (max/min).
@@ -51,9 +62,13 @@ class NrCounter extends CounterBase {
     return this.counterImmediate();
   }
 
+  /**
+   * @inheritDoc
+   */
   public stop() {
     if (typeof this.immediateTimer !== "undefined") {
       clearImmediate(this.immediateTimer);
+      this.immediateTimer = undefined;
     }
   }
 

@@ -21,6 +21,10 @@ declare class NrCounter extends CounterBase {
      * The latest tick count.
      */
     protected tickCount: number;
+    /**
+     * @param log
+     *   A "console.log(sprintf(" compatible function.
+     */
     constructor(log?: LogFunction);
     /**
      * Resetting max(cpuMsec) and return its value.
@@ -29,7 +33,16 @@ declare class NrCounter extends CounterBase {
      *   max(cpuMsecPerTick) since last call to counterReset().
      */
     counterReset(): number;
+    /**
+     * Start the metric collection.
+     *
+     * @return
+     *   A timer instance usable with this.stop() to stop collection.
+     */
     start(): NodeJS.Timeout;
+    /**
+     * @inheritDoc
+     */
     stop(): void;
     watch(): WatchResult;
     /**

@@ -28,7 +28,16 @@ declare class CostlyCounter extends CounterBase {
      *   A "console.log(sprintf(" compatible function.
      */
     constructor(log?: LogFunction);
+    /**
+     * Start the metric collection.
+     *
+     * @return
+     *   A timer instance usable with this.stop() to stop collection.
+     */
     start(): NodeJS.Timeout;
+    /**
+     * Stop metrics collection.
+     */
     stop(): void;
     watch(): WatchResult;
     /**

@@ -18,6 +18,7 @@ import {INodeInfoStore, NodeInfo} from "./NodeInfo";
 import {SessionInfo} from "./SessionInfo";
 import {SocketInfo} from "./SocketInfo";
 import {Counter, IInfoDescription, IInfoSection } from "./types";
+import CpuUsage = NodeJS.CpuUsage;
 
 interface IFacts {
   _factsByPackage: {
@@ -87,7 +88,12 @@ class ServerInfo {
     // We only use the Meteor default_server key, but we keep the whole Meteor
     // object in case the default_server key might change.
     this.store = {
-      process: {} as INodeInfoStore,
+      process: {
+        latestCpu:   { user: 0, system: 0 } as CpuUsage,
+        latestDelay: 0,
+        latestPoll:  0,
+        latestTime: [0, 0],
+      } as INodeInfoStore,
     };
     this.sections = {
       mongo:    new MongoInfo(this.mongoInternals),

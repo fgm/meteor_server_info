@@ -31,7 +31,13 @@ function testNodeInfo() {
       },
     };
 
-    const store: INodeInfoStore = {} as INodeInfoStore;
+    const store: INodeInfoStore = {
+        latestDelay: 0,
+        latestPoll:  0,
+        latestTime: [0, 0],
+        latestCpu:   { user: 0, system: 0 } as CpuUsage,
+    };
+
     const collector = new NodeInfo(mockProcess, store);
 
     return collector;
@@ -47,6 +53,7 @@ function testNodeInfo() {
     expect(t1[1]).toBeGreaterThan(0);
     expect(info.cpuSystem).toBe(0);
     expect(info.cpuUser).toBe(0);
+    collector.stop();
   });
 
   test("CPU usage is not empty", () => {
@@ -68,6 +75,7 @@ function testNodeInfo() {
     expect(info.cpuSystem).toBeGreaterThanOrEqual(0);
     expect(info.cpuSystem).toBeLessThan(1);
     expect(info.cpuUser).toBeGreaterThan(lag);
+    collector.stop();
   });
 
   test("All CPU usage information is documented", () => {
@@ -84,6 +92,7 @@ function testNodeInfo() {
       expect(description.label.length).toBeGreaterThan(0);
       expect(typeof info[key]).toBe(description.type);
     }
+    collector.stop();
   })
 }
 

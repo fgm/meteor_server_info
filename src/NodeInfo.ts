@@ -5,6 +5,7 @@ import CpuUsage = NodeJS.CpuUsage;
 import CpuUsageNormalized = NodeJS.CpuUsage;
 import MemoryUsage = NodeJS.MemoryUsage;
 import Process = NodeJS.Process;
+import Timeout = NodeJS.Timeout;
 
 import {IInfoData, IInfoDescription, IInfoSection} from "./types";
 
@@ -43,6 +44,8 @@ class NodeInfo implements IInfoSection {
   public static EVENT_LOOP_INTERVAL: number = 10000;
 
   protected info: INodeInfoData;
+
+  protected timer?: Timeout;
 
   /**
    * @param process
@@ -128,6 +131,16 @@ class NodeInfo implements IInfoSection {
   }
 
   /**
+   * Stop metrics collection, releasing timer.
+   */
+  public stop() {
+    if (typeof this.timer !== "undefined") {
+      clearInterval(this.timer);
+      this.timer = undefined;
+    }
+  }
+
+  /**
    * Update the CPU reading and return it normalized per second.
    *
    * @return
@@ -170,7 +183,7 @@ class NodeInfo implements IInfoSection {
       this.store.latestTime = process.hrtime();
     }
 
-    setInterval(() => {
+    this.timer = setInterval(() => {
         const newTime: HrTime = process.hrtime();
         const delay: number =
           (newTime[0] - this.store.latestTime [0]) * 1E3 +
@@ -179,7 +192,7 @@ class NodeInfo implements IInfoSection {
         this.store.latestTime = newTime;
         this.store.latestDelay = delay;
         // tslint:disable-next-line:no-console
-        console.log("Delay: ", Number(delay).toFixed(2));
+        // console.log("Delay: ", Number(delay).toFixed(2));
       }, NodeInfo.EVENT_LOOP_INTERVAL);
   }
 }

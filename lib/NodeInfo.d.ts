@@ -5,6 +5,7 @@ import CpuUsage = NodeJS.CpuUsage;
  */
 import CpuUsageNormalized = NodeJS.CpuUsage;
 import Process = NodeJS.Process;
+import Timeout = NodeJS.Timeout;
 import { IInfoData, IInfoDescription, IInfoSection } from "./types";
 declare type HrTime = [number, number];
 interface INodeInfoData extends IInfoData {
@@ -38,6 +39,7 @@ declare class NodeInfo implements IInfoSection {
      */
     static EVENT_LOOP_INTERVAL: number;
     protected info: INodeInfoData;
+    protected timer?: Timeout;
     /**
      * @param process
      *   The NodeJS process module or a stub for it.
@@ -58,6 +60,10 @@ declare class NodeInfo implements IInfoSection {
      * Get process information about CPU and RAM usage.
      */
     getInfo(): INodeInfoData;
+    /**
+     * Stop metrics collection, releasing timer.
+     */
+    stop(): void;
     /**
      * Update the CPU reading and return it normalized per second.
      *

@@ -13,8 +13,20 @@ import { CounterBase, LogFunction, WatchResult } from "./CounterBase";
  */
 declare class CheapCounter extends CounterBase {
     protected keep: boolean;
+    /**
+     * @param keep
+     *   Keep the event loop running even if only this counter remains.
+     * @param log
+     *   A "console.log(sprintf(" compatible function.
+     */
     constructor(keep?: boolean, log?: LogFunction);
+    /**
+     * @inheritDoc
+     */
     start(): NodeJS.Timeout;
+    /**
+     * @inheritDoc
+     */
     watch(): WatchResult;
 }
 export { CheapCounter, };

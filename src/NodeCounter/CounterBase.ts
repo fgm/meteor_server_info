@@ -2,7 +2,14 @@ import { hrtime } from "process";
 
 import Timeout = NodeJS.Timeout;
 
+/**
+ * The result of a watch() iteration: a previous/current pair of nanotimestamps.
+ */
 type WatchResult = [bigint, bigint];
+
+/**
+ * The type for fonctions compatible with "console.log(sprintf("
+ */
 type LogFunction = (format: string, ...args: any[]) => void;
 
 /**
@@ -19,6 +26,8 @@ class CounterBase {
    */
   protected lastNSec: bigint;
 
+  protected timer?: Timeout;
+
   /**
    * @param log
    *   A "console.log(sprintf(" compatible function.
@@ -32,13 +41,32 @@ class CounterBase {
     return 1000;
   }
 
+  /**
+   * Start the metric collection.
+   *
+   * @return Timeout
+   *   A timer instance usable with this.stop() to stop collection.
+   */
   public start(): Timeout {
     // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
     this.lastNSec = (hrtime as any).bigint();
-    const timer = setInterval(this.watch.bind(this), CounterBase.LAP);
-    return timer;
+    this.timer = setInterval(this.watch.bind(this), CounterBase.LAP);
+    return this.timer;
   }
 
+  /**
+   * Stop metrics collection. Idempotent, won't error.
+   */
+  public stop() {
+    if (typeof this.timer !== "undefined") {
+      clearTimeout(this.timer);
+      this.timer = undefined;
+    }
+  }
+
+  /**
+   * Observe the current metrics value and update last nanotimestamp.
+   */
   public watch(): WatchResult {
     const prev = this.lastNSec;
     // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471

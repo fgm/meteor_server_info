@@ -12,11 +12,21 @@ import {CounterBase, LogFunction, nullLogger, WatchResult} from "./CounterBase";
  * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes less than 0.5% CPU load.
  */
 class CheapCounter extends CounterBase {
+
+  /**
+   * @param keep
+   *   Keep the event loop running even if only this counter remains.
+   * @param log
+   *   A "console.log(sprintf(" compatible function.
+   */
   constructor(protected keep: boolean = true, log: LogFunction = nullLogger) {
     super(log);
     this.keep = keep;
   }
 
+  /**
+   * @inheritDoc
+   */
   public start(): NodeJS.Timeout {
     const timer = super.start();
     if (!this.keep) {
@@ -26,6 +36,9 @@ class CheapCounter extends CounterBase {
     return timer;
   }
 
+  /**
+   * @inheritDoc
+   */
   public watch(): WatchResult {
     const [prev, nsec] = super.watch();
     const actualLapMsec = Number(nsec - prev) / 1E6;

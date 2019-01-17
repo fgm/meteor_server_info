@@ -34,12 +34,21 @@ class CostlyCounter extends CounterBase {
     this.tickCount = 0;
   }
 
+  /**
+   * Start the metric collection.
+   *
+   * @return
+   *   A timer instance usable with this.stop() to stop collection.
+   */
   public start(): NodeJS.Timeout {
     super.start();
     // Start the actual counting loop.
     return this.counterImmediate();
   }
 
+  /**
+   * Stop metrics collection.
+   */
   public stop() {
     if (typeof this.immediateTimer !== "undefined") {
       clearImmediate(this.immediateTimer);
