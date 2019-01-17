@@ -14,11 +14,10 @@ import {WebApp} from "meteor/webapp";
 
 // Module imports.
 import {MongoInfo} from "./MongoInfo";
-import {INodeInfoStore, NodeInfo} from "./NodeInfo";
+import {NodeInfo} from "./NodeInfo";
 import {SessionInfo} from "./SessionInfo";
 import {SocketInfo} from "./SocketInfo";
 import {Counter, IInfoDescription, IInfoSection } from "./types";
-import CpuUsage = NodeJS.CpuUsage;
 
 interface IFacts {
   _factsByPackage: {
@@ -49,7 +48,7 @@ const defaultSettings: IServerInfoSettings = {
   user: "insecure",
 };
 
-// Connect 2 Authentication returns a middleware
+// Connect 2 Authentication returns a middleware.
 type Connect2Auth = (user: string, pass: string) =>
   (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
 
@@ -59,9 +58,6 @@ class ServerInfo {
   };
   public connectHandlers: connect.Server;
   public settings: IServerInfoSettings;
-  public store: {
-    process: INodeInfoStore,
-  };
 
   /**
    * {constructor}
@@ -87,17 +83,9 @@ class ServerInfo {
     this.connectHandlers = webApp.connectHandlers;
     // We only use the Meteor default_server key, but we keep the whole Meteor
     // object in case the default_server key might change.
-    this.store = {
-      process: {
-        latestCpu:   { user: 0, system: 0 } as CpuUsage,
-        latestDelay: 0,
-        latestPoll:  0,
-        latestTime: [0, 0],
-      } as INodeInfoStore,
-    };
     this.sections = {
       mongo:    new MongoInfo(this.mongoInternals),
-      process:  new NodeInfo(process, this.store.process),
+      process:  new NodeInfo(process),
       sessions: new SessionInfo(this.meteor.default_server.sessions),
       sockets:  new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
     };
@@ -229,6 +217,5 @@ class ServerInfo {
 }
 
 export {
-  INodeInfoStore,
   ServerInfo,
 };

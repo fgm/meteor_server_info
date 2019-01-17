@@ -22,16 +22,6 @@ interface INodeInfoData extends IInfoData {
 }
 
 /**
- * An off-instance structure to preserve information between instance creations.
- */
-interface INodeInfoStore {
-  latestCpu:   CpuUsage,
-  latestPoll:  number,
-  latestTime:  HrTime,
-  latestDelay: number,
-}
-
-/**
  * Provides the Node.JS-related information: RAM, CPU load.
  */
 class NodeInfo implements IInfoSection {
@@ -44,18 +34,19 @@ class NodeInfo implements IInfoSection {
   public static EVENT_LOOP_INTERVAL: number = 10000;
 
   protected info: INodeInfoData;
-
+  protected latestCpu: CpuUsage = { user: 0, system: 0 };
+  protected latestDelay: number = 0;
+  protected latestPoll: number = 0;
+  protected latestTime: HrTime;
   protected timer?: Timeout;
 
   /**
    * @param process
    *   The NodeJS process module or a stub for it.
-   * @param store
-   *   An object in which to store information between instance creations.
    *
    * @constructor
    */
-  constructor(protected process: Process, protected store: INodeInfoStore) {
+  constructor(protected process: Process) {
     this.info = {
       cpuSystem:    0,
       cpuUser:      0,
@@ -66,6 +57,7 @@ class NodeInfo implements IInfoSection {
       ramRss:       0,
     };
     // Initialize the latestPoll/latestCpu properties.
+    this.latestTime = process.hrtime();
     this.pollCpuUsage();
     this.startEventLoopObserver();
   }
@@ -149,16 +141,16 @@ class NodeInfo implements IInfoSection {
   protected pollCpuUsage(): CpuUsageNormalized {
     // Date is in msec, cpuUsage is in µsec.
     const ts1 = +new Date() * 1E3;
-    const ts0 = this.store.latestPoll || 0;
+    const ts0 = this.latestPoll;
     // Although Date has msec resolution, in practice, getting identical dates
     // happens easily, so fake an actual millisecond different if the diff is 0,
     // to avoid infinite normalized CPU usage. 1E3 from msec to µsec.
     const tsDiff = (ts1 - ts0) || 1E3;
-    this.store.latestPoll = ts1;
+    this.latestPoll = ts1;
 
-    const reading0: CpuUsage = this.store.latestCpu || { user: 0, system: 0 };
+    const reading0: CpuUsage = this.latestCpu;
     const reading1: CpuUsage = this.process.cpuUsage();
-    this.store.latestCpu = reading1;
+    this.latestCpu = reading1;
 
     const result: CpuUsageNormalized = {
       system: (reading1.system - reading0.system) / tsDiff,
@@ -168,7 +160,7 @@ class NodeInfo implements IInfoSection {
   }
 
   protected pollLoop(): number {
-    return this.store.latestDelay;
+    return this.latestDelay;
   }
 
   /**
@@ -179,20 +171,16 @@ class NodeInfo implements IInfoSection {
    * Used under its MIT license, per pmx README.md
    */
   protected startEventLoopObserver() {
-    if (typeof(this.store.latestTime) === "undefined") {
-      this.store.latestTime = process.hrtime();
-    }
-
     this.timer = setInterval(() => {
         const newTime: HrTime = process.hrtime();
         const delay: number =
-          (newTime[0] - this.store.latestTime [0]) * 1E3 +
-          (newTime[1] - this.store.latestTime [1]) / 1e6 -
+          (newTime[0] - this.latestTime [0]) * 1E3 +
+          (newTime[1] - this.latestTime [1]) / 1e6 -
           NodeInfo.EVENT_LOOP_INTERVAL;
-        this.store.latestTime = newTime;
-        this.store.latestDelay = delay;
+        this.latestTime = newTime;
+        this.latestDelay = delay;
         // tslint:disable-next-line:no-console
-        // console.log("Delay: ", Number(delay).toFixed(2));
+        console.log("Delay: ", Number(delay).toFixed(2));
       }, NodeInfo.EVENT_LOOP_INTERVAL);
   }
 }
@@ -200,5 +188,4 @@ class NodeInfo implements IInfoSection {
 export {
   NodeInfo,
   INodeInfoData,
-  INodeInfoStore,
 };

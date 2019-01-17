@@ -1,11 +1,10 @@
 import * as process from "process";
-
+import {INodeInfoData, NodeInfo} from "../../src/NodeInfo";
+import {IInfoDescription} from "../../src/types";
 import CpuUsage = NodeJS.CpuUsage;
 import MemoryUsage = NodeJS.MemoryUsage;
-//import Process = NodeJS.Process;
 
-import {INodeInfoData, INodeInfoStore, NodeInfo} from "../../src/NodeInfo";
-import {IInfoDescription} from "../../src/types";
+//import Process = NodeJS.Process;
 
 /**
  * These tests run on node 8.4, to process.hrtime.bigint() is not available yet.
@@ -29,18 +28,9 @@ function testNodeInfo() {
       memoryUsage(): MemoryUsage {
         return this._memory;
       },
+      hrtime: process.hrtime,
     };
-
-    const store: INodeInfoStore = {
-        latestDelay: 0,
-        latestPoll:  0,
-        latestTime: [0, 0],
-        latestCpu:   { user: 0, system: 0 } as CpuUsage,
-    };
-
-    const collector = new NodeInfo(mockProcess, store);
-
-    return collector;
+    return new NodeInfo(mockProcess);
   }
 
   test("constructor initializes CPU usage", () => {
@@ -57,8 +47,7 @@ function testNodeInfo() {
   });
 
   test("CPU usage is not empty", () => {
-    const store: INodeInfoStore = {} as INodeInfoStore;
-    const collector = new NodeInfo(process, store);
+    const collector = new NodeInfo(process);
     // Prime CPU store.
     collector.getInfo();
 
@@ -81,7 +70,7 @@ function testNodeInfo() {
   test("All CPU usage information is documented", () => {
     const collector = getTestingNodeCollector();
     const info: INodeInfoData = collector.getInfo();
-    const descriptions: IInfoDescription = collector.getDescription()
+    const descriptions: IInfoDescription = collector.getDescription();
     const keys = Object.keys(info);
     expect(keys.length).toBeGreaterThan(0);
     for (const key of keys) {

@@ -18,20 +18,10 @@ interface INodeInfoData extends IInfoData {
     loopDelay: number;
 }
 /**
- * An off-instance structure to preserve information between instance creations.
- */
-interface INodeInfoStore {
-    latestCpu: CpuUsage;
-    latestPoll: number;
-    latestTime: HrTime;
-    latestDelay: number;
-}
-/**
  * Provides the Node.JS-related information: RAM, CPU load.
  */
 declare class NodeInfo implements IInfoSection {
     protected process: Process;
-    protected store: INodeInfoStore;
     /**
      * The interval at which the event loop delay is measured, in milliseconds.
      *
@@ -39,16 +29,18 @@ declare class NodeInfo implements IInfoSection {
      */
     static EVENT_LOOP_INTERVAL: number;
     protected info: INodeInfoData;
+    protected latestCpu: CpuUsage;
+    protected latestDelay: number;
+    protected latestPoll: number;
+    protected latestTime: HrTime;
     protected timer?: Timeout;
     /**
      * @param process
      *   The NodeJS process module or a stub for it.
-     * @param store
-     *   An object in which to store information between instance creations.
      *
      * @constructor
      */
-    constructor(process: Process, store: INodeInfoStore);
+    constructor(process: Process);
     /**
      * Describe the metrics provided by this service.
      *
@@ -81,4 +73,4 @@ declare class NodeInfo implements IInfoSection {
      */
     protected startEventLoopObserver(): void;
 }
-export { NodeInfo, INodeInfoData, INodeInfoStore, };
+export { NodeInfo, INodeInfoData, };

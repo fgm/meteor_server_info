@@ -3,7 +3,6 @@ import connect from "connect";
 import { IncomingMessage, ServerResponse } from "http";
 import "process";
 import { WebApp } from "meteor/webapp";
-import { INodeInfoStore } from "./NodeInfo";
 import { IInfoDescription, IInfoSection } from "./types";
 interface IFacts {
     _factsByPackage: {
@@ -34,9 +33,6 @@ declare class ServerInfo {
     };
     connectHandlers: connect.Server;
     settings: IServerInfoSettings;
-    store: {
-        process: INodeInfoStore;
-    };
     /**
      * {constructor}
      *
@@ -115,4 +111,4 @@ declare class ServerInfo {
      */
     protected infoReducer(accu: any, [section, infoInstance]: [string, IInfoSection]): any;
 }
-export { INodeInfoStore, ServerInfo, };
+export { ServerInfo, };
