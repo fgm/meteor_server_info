@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import CpuUsage = NodeJS.CpuUsage;
-import { CounterBase, LogFunction, WatchResult } from "./CounterBase";
+import { IInfoData, IInfoDescription, LogFunction } from "../types";
+import { CounterBase, WatchResult } from "./CounterBase";
 /**
  * This counter attempts to mimic NewRelics "CPU time per tick" metric.
  *
@@ -29,10 +30,20 @@ declare class NrCounter extends CounterBase {
     /**
      * Resetting max(cpuMsec) and return its value.
      *
+     * This method is only public for tests: it is not meant for external use.
+     *
      * @return {number}
      *   max(cpuMsecPerTick) since last call to counterReset().
      */
     counterReset(): number;
+    /**
+     * @inheritDoc
+     */
+    getDescription(): IInfoDescription;
+    /**
+     * @inheritDoc
+     */
+    getInfo(): IInfoData;
     /**
      * Start the metric collection.
      *
@@ -44,7 +55,7 @@ declare class NrCounter extends CounterBase {
      * @inheritDoc
      */
     stop(): void;
-    watch(): WatchResult;
+    protected watch(): WatchResult;
     /**
      * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
      *

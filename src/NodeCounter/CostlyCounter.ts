@@ -1,5 +1,7 @@
 import Immediate = NodeJS.Immediate;
-import {CounterBase, LogFunction, nullLogger, WatchResult } from "./CounterBase";
+
+import {IInfoDescription, LogFunction, nullLogger} from "../types";
+import {CounterBase, WatchResult } from "./CounterBase";
 
 /**
  * This counter actually counts ticks by jumping to and fro the loop phases.
@@ -35,6 +37,43 @@ class CostlyCounter extends CounterBase {
   }
 
   /**
+   * @inheritDoc
+   */
+  public getDescription(): IInfoDescription {
+    const numberTypeName = "number";
+    return {
+      clockMsec: {
+        label: "Milliseconds since last polling",
+        type: numberTypeName,
+      },
+      diffMsec: {
+        label: "Difference between actual and expected milliseconds since last polling",
+        type: numberTypeName,
+      },
+      expectedLapMsec: {
+        label: "Expected milliseconds since last polling",
+        type: numberTypeName,
+      },
+      individualLapMsec: {
+        label: "Average milliseconds per tick",
+        type: numberTypeName,
+      },
+      lag: {
+        label: "Difference between expected and actual tick duration",
+        type: numberTypeName,
+      },
+      tickCount: {
+        label: "Ticks since last polling",
+        type: numberTypeName,
+      },
+      ticksPerMin: {
+        label: "Ticks per minute",
+        type: numberTypeName,
+      },
+    };
+  }
+
+  /**
    * Start the metric collection.
    *
    * @return
@@ -55,34 +94,48 @@ class CostlyCounter extends CounterBase {
     }
   }
 
-  public watch(): WatchResult {
+  protected watch(): WatchResult {
     const [prev, nsec] = super.watch();
-
-    // The time elapsed since the previous watch() call.
-    // TODO replace by nsec - nprev after Node >= 10.7
-    const actualLapµsec = Number(nsec.sub(prev)) / 1E3; // nsed to µsec.
-
-    // The time expected to have elapsed since the previous watch() call.
-    const expectedLapµsec = CostlyCounter.LAP * 1E3; // msec to µsec.
-
-    // The extra delay incurred from expect to actual time elapsed.
-    const diffµsec = Math.max(Math.round(actualLapµsec - expectedLapµsec), 0);
 
     // The actual number of loops performed since the previous watch() call.
     // Math.max is used in case this code runs before the loop counter when LAP <= 1 msec.
-    const effectiveLoopCount = Math.max(this.tickCount, 1);
+    const tickCount = Math.max(this.tickCount, 1);
+
+    // The time elapsed since the previous watch() call.
+    // TODO replace by nsec - nprev after Node >= 10.7
+    const clockMsec = nsec.sub(prev).toMsec();
+
+    const ticksPerMin = tickCount / clockMsec * 60 * 1000;
+
+    // The time expected to have elapsed since the previous watch() call.
+    const expectedLapMsec = CostlyCounter.LAP;
+
+    // The extra delay incurred from expect to actual time elapsed.
+    const diffMsec = Math.max(Math.round(clockMsec - expectedLapMsec), 0);
 
     // The extra time spent per loop.
-    let lag = diffµsec / effectiveLoopCount;
+    let lag = diffMsec / tickCount;
     if (isNaN(lag)) {
       lag = 0;
     }
-    const invidualLapµsec = Math.round(actualLapµsec / effectiveLoopCount);
-    this.log("µsec for %4d loops: expected %7d, actual %7d, diff %6d. Lag per loop: %6.2f, Time per loop: %6d",
-      effectiveLoopCount, expectedLapµsec, actualLapµsec, diffµsec, lag, invidualLapµsec,
+    const individualLapMsec = Math.round(clockMsec / tickCount);
+    this.log(
+      "%4d ticks in %4d msec (expected %4d) => Ticks/minute: %5d, diff %3d. Lag per loop: %6.2f, Time per loop: %6d",
+      tickCount, clockMsec, expectedLapMsec, ticksPerMin, diffMsec, lag, individualLapMsec,
     );
 
     this.tickCount = 0;
+
+    this.setLastPoll({
+      clockMsec,
+      diffMsec,
+      expectedLapMsec,
+      individualLapMsec,
+      lag,
+      tickCount,
+      ticksPerMin,
+    });
+
     return [prev, nsec];
   }
 

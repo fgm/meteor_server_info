@@ -1,5 +1,6 @@
 /// <reference types="node" />
-import { CounterBase, LogFunction, WatchResult } from "./CounterBase";
+import { IInfoData, IInfoDescription, LogFunction } from "../types";
+import { CounterBase, WatchResult } from "./CounterBase";
 /**
  *
  * It is cheap because:
@@ -23,10 +24,18 @@ declare class CheapCounter extends CounterBase {
     /**
      * @inheritDoc
      */
+    getDescription(): IInfoDescription;
+    /**
+     * @inheritDoc
+     */
+    getInfo(): IInfoData;
+    /**
+     * @inheritDoc
+     */
     start(): NodeJS.Timeout;
     /**
      * @inheritDoc
      */
-    watch(): WatchResult;
+    protected watch(): WatchResult;
 }
 export { CheapCounter, };

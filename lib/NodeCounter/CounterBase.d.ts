@@ -1,52 +1,49 @@
 /// <reference types="node" />
+import { IInfoData, IInfoDescription, IInfoSection, LogFunction, NanoTs } from "../types";
 import Timeout = NodeJS.Timeout;
-/**
- * The result of a watch() iteration: a previous/current pair of nanotimestamps.
- *
- * It can only represent positive durations.
- *
- * TODO Remove this workaround workaround after Node >= 10.7 with bigint.
- */
-declare class NanoTs {
-    protected seconds: number;
-    protected nanosec: number;
-    /**
-     * Ensures normalize values: only positive integers, nanosec < 1E9.
-     *
-     * Converts extra nsec to extra seconds if needed.
-     *
-     * @param seconds
-     * @param nanosec
-     */
-    constructor(seconds?: number, nanosec?: number);
-    /**
-     * Subtract a *smaller* NanoTs from a larger one.
-     *
-     * @param other
-     *
-     * @throws Error
-     *   In case of data corruption, or if the other value is larger than the instance.
-     */
-    sub(other: NanoTs): NanoTs;
-}
 declare type WatchResult = [NanoTs, NanoTs];
+interface ICounter {
+    /**
+     * Retrieve the latest sampled results.
+     *
+     * MAY reset some information: see NrCounter for an example.
+     */
+    getLastPoll(): IInfoData;
+    /**
+     * Store the latest sampled results.
+     *
+     * @param info
+     *   The latest sampled results.
+     *
+     * This method is only meant for internal or test use.
+     */
+    setLastPoll(info: IInfoData): void;
+    /**
+     * Start metric sampling.
+     */
+    start(): void;
+    /**
+     * Stop metric sampling.
+     */
+    stop(): void;
+}
 /**
- * The type for fonctions compatible with "console.log(sprintf("
- */
-declare type LogFunction = (format: string, ...args: any[]) => void;
-/**
- * nullLogger is a silent logger usable by Counter classes.
+ * The general logic of counters may imply TWO different looping constructs:
  *
- * @param {string}_format
- * @param {any[]} _args
+ * - a metrics loop, which generates work values
+ * - a polling loop, which gathers current work values and stores them for review
+ *
+ * In the simple CheapCounter, there is no specific metric loop, but
+ * CostlyCounter and NrCounter use a separate metrics "loop" made of alternate
+ * setTimeout()/setImmediate() jumps running around the NodeJS event loop.
  */
-declare const nullLogger: LogFunction;
-declare class CounterBase {
+declare class CounterBase implements ICounter, IInfoSection {
     protected log: LogFunction;
     /**
      * The latest time measurement, in nanoseconds.
      */
     protected lastNSec: NanoTs;
+    protected lastPoll: IInfoData;
     protected timer?: Timeout;
     /**
      * @param log
@@ -54,8 +51,18 @@ declare class CounterBase {
      */
     constructor(log?: LogFunction);
     static readonly LAP: number;
+    getInfo(): IInfoData;
+    getDescription(): IInfoDescription;
     /**
-     * Start the metric collection.
+     * @inheritDoc
+     */
+    getLastPoll(): IInfoData;
+    /**
+     * @inheritDoc
+     */
+    setLastPoll(info: IInfoData): void;
+    /**
+     * Start the polling loop. Child classes will also start a metric loop.
      *
      * @return Timeout
      *   A timer instance usable with this.stop() to stop collection.
@@ -68,6 +75,6 @@ declare class CounterBase {
     /**
      * Observe the current metrics value and update last nanotimestamp.
      */
-    watch(): WatchResult;
+    protected watch(): WatchResult;
 }
-export { CounterBase, LogFunction, WatchResult, nullLogger, };
+export { CounterBase, ICounter, WatchResult, };

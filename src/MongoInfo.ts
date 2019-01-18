@@ -105,9 +105,11 @@ class MongoInfo implements IInfoSection {
     if (!this.info[type].has(collectionName)) {
       this.info[type].set(collectionName, 0);
     }
+    // TODO: inline after Node >= 10.7 when NanoTs is removed.
+    const val: number = this.info[type]!.get(collectionName)! as number;
     this.info[type].set(collectionName,
       // Counter was defined in constructor, collection in previous line.
-      this.info[type]!.get(collectionName)! + 1);
+      val + 1);
   }
 
   /**

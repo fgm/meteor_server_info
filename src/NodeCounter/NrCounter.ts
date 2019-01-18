@@ -1,6 +1,8 @@
-import { cpuUsage } from "process";
 import CpuUsage = NodeJS.CpuUsage;
-import {CounterBase, LogFunction, nullLogger, WatchResult} from "./CounterBase";
+import {cpuUsage} from "process";
+
+import {IInfoData, IInfoDescription, LogFunction, nullLogger} from "../types";
+import {CounterBase, WatchResult} from "./CounterBase";
 
 /**
  * This counter attempts to mimic NewRelics "CPU time per tick" metric.
@@ -39,6 +41,8 @@ class NrCounter extends CounterBase {
   /**
    * Resetting max(cpuMsec) and return its value.
    *
+   * This method is only public for tests: it is not meant for external use.
+   *
    * @return {number}
    *   max(cpuMsecPerTick) since last call to counterReset().
    */
@@ -49,6 +53,50 @@ class NrCounter extends CounterBase {
   }
 
   /**
+   * @inheritDoc
+   */
+  public getDescription(): IInfoDescription {
+    const numberTypeName = "number";
+    return {
+      clockMsec: {
+        label: "Milliseconds since last polling",
+        type: numberTypeName,
+      },
+      cpuMsecPerTick: {
+        label: "Average CPU milliseconds used by process per tick since last polling",
+        type: numberTypeName,
+      },
+      cpuMsecSinceLast: {
+        label: "CPU milliseconds used by process since last polling",
+        type: numberTypeName,
+      },
+      maxCpuMsec: {
+        label: "Maximum of CPU milliseconds used by process since last fetch of the same counter, not last polling",
+        type: numberTypeName,
+      },
+      tickCount: {
+        label: "Ticks since last polling",
+        type: numberTypeName,
+      },
+      ticksPerMin: {
+        label: "Ticks per minute",
+        type: numberTypeName,
+      },
+    };
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public getInfo(): IInfoData {
+    return {
+      ...this.getLastPoll(),
+      // maxCpuMsec is collected in real time, not by polling.
+      maxCpuMsec: this.counterReset(),
+    };
+  }
+
+  /**
    * Start the metric collection.
    *
    * @return
@@ -56,6 +104,7 @@ class NrCounter extends CounterBase {
    */
   public start(): NodeJS.Timeout {
     super.start();
+
     // Initialize selector counters (max/min).
     this.counterReset();
     // Start the actual counting loop.
@@ -72,10 +121,11 @@ class NrCounter extends CounterBase {
     }
   }
 
-  public watch(): WatchResult {
+  protected watch(): WatchResult {
     const [prev, nsec] = super.watch();
+
     const usage = cpuUsage();
-    const { user, system } = cpuUsage(this.latestWatchUsage);
+    const {user, system} = cpuUsage(this.latestWatchUsage);
     const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
 
     // The actual number of loops performed since the previous watch() call.
@@ -83,8 +133,8 @@ class NrCounter extends CounterBase {
     const tickCount = Math.max(this.tickCount, 1);
 
     // The time elapsed since the previous watch() call.
-    // TODO replace by nsec - nprev after Node 10.7.
-    const clockMsec = Number(nsec.sub(prev)) / 1E6; // nsec to msec.
+    // TODO replace by nsec - nprev after Node >= 10.7
+    const clockMsec = nsec.sub(prev).toMsec();
 
     const ticksPerMin = tickCount / clockMsec * 60 * 1000;
     const cpuMsecPerTick = cpuMsecSinceLast / tickCount;
@@ -94,6 +144,14 @@ class NrCounter extends CounterBase {
 
     this.tickCount = 0;
     this.latestWatchUsage = usage;
+    this.setLastPoll({
+      clockMsec,
+      cpuMsecPerTick,
+      cpuMsecSinceLast,
+      tickCount,
+      ticksPerMin,
+    });
+
     return [prev, nsec];
   }
 
@@ -110,7 +168,7 @@ class NrCounter extends CounterBase {
 
   protected counterTimer() {
     const usage = cpuUsage();
-    const { user, system } = cpuUsage(this.latestCounterUsage);
+    const {user, system} = cpuUsage(this.latestCounterUsage);
     const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
     if (cpuMsecSinceLast > this.maxCpuMsec) {
       this.maxCpuMsec = cpuMsecSinceLast;

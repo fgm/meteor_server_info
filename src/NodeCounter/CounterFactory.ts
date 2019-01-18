@@ -1,12 +1,13 @@
+import { LogFunction } from "../types";
 import { CheapCounter } from "./CheapCounter";
 import { CostlyCounter } from "./CostlyCounter";
-import { CounterBase, LogFunction } from "./CounterBase";
+import { ICounter} from "./CounterBase";
 import { NrCounter } from "./NrCounter";
 
 type CounterType = "cheap" | "costly" | "nr";
 
 class CounterFactory {
-  public static create(variant: CounterType, log?: LogFunction): CounterBase {
+  public static create(variant: CounterType, log?: LogFunction): ICounter {
     switch (variant) {
       case "cheap":
         return log ? new CheapCounter(false, log) : new CheapCounter(false);
@@ -23,5 +24,4 @@ class CounterFactory {
 export {
   CounterFactory,
   CounterType,
-  LogFunction,
 };

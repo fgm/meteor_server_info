@@ -1,4 +1,5 @@
-import {CounterBase, LogFunction, nullLogger, WatchResult} from "./CounterBase";
+import {IInfoData, IInfoDescription, LogFunction, nullLogger} from "../types";
+import {CounterBase, WatchResult} from "./CounterBase";
 
 /**
  *
@@ -27,6 +28,28 @@ class CheapCounter extends CounterBase {
   /**
    * @inheritDoc
    */
+  public getDescription(): IInfoDescription {
+    const numberTypeName = "number";
+    const description = {
+      loopDelay: {
+        label: "Estimated average event main loop duration, in msec.",
+        type: numberTypeName,
+      },
+    };
+
+    return description;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public getInfo(): IInfoData {
+    return this.getLastPoll();
+  }
+
+  /**
+   * @inheritDoc
+   */
   public start(): NodeJS.Timeout {
     const timer = super.start();
     if (!this.keep) {
@@ -39,16 +62,22 @@ class CheapCounter extends CounterBase {
   /**
    * @inheritDoc
    */
-  public watch(): WatchResult {
+  protected watch(): WatchResult {
     const [prev, nsec] = super.watch();
+    const actualLapNanoTs = nsec.sub(prev);
     // TODO Convert to nsec - prev after Node >= 10.7.
-    const actualLapMsec = Number(nsec.sub(prev)) / 1E6;
+    const actualLapMsec = actualLapNanoTs.toMsec();
     const expectedLapMsec = CheapCounter.LAP;
 
     const diffMsec = Math.max(parseFloat((actualLapMsec - expectedLapMsec).toFixed(2)), 0);
     this.log("msec for polling loop: expected %4d, actual %7d, lag %6.2f",
       expectedLapMsec, actualLapMsec, diffMsec,
     );
+
+    this.setLastPoll({
+      loopDelay: actualLapNanoTs,
+    });
+
     return [prev, nsec];
   }
 }

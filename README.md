@@ -53,18 +53,19 @@ following server keys:
 - `user`: the user account for the HTTP Basic authentication securing access.
   Defaults to `insecure`.
 - `pass`: the password for the user account. Defaults to `secureme`.
+- `verbose`: enable console logging. Defaults to `false`.
 - `eventLoopStrategy`: the strategy to use to instrument the event loop and CPU
-  - `cheap`: similar to [PM2] or [pebble/event-loop-lag]; low CPU cost : expect 
+  - `"cheap"`: similar to [PM2] or [pebble/event-loop-lag]; low CPU cost : expect 
     around 0.5% on 2019 hardware,
     very limited accuracy, will usually under-estimate the actual loop latency.
-  - `costly`: inspired by a [Dynatrace article], a much more accurate strategy,
+  - `"costly"`: inspired by a [Dynatrace article], a much more accurate strategy,
     tracing each tick of the event loop ; this is much also more costly since 
     it disables the event loop "poll phase wait" optimization: expect 5% load 
     on 2019 hardware
-  - `nr`: inspired by NewRelic "CPU time per tick", a more intuitive metric, 
+  - `"nr"`: inspired by NewRelic "CPU time per tick", a more intuitive metric, 
     built on top of the `costly` algorithm, with an extra CPU cost: expect 6% 
     load on 2019 hardware.
-  - if that key is undefined, the event loop metrics collection is disabled, to
+  - `false`, the event loop metrics collection is disabled, to
     keep costs at an absolute minimum like the legacy MeteorServerInfo.
     
 [pebble/event-loop-lag]: https://github.com/pebble/event-loop-lag

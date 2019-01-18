@@ -5,10 +5,8 @@ import CpuUsage = NodeJS.CpuUsage;
  */
 import CpuUsageNormalized = NodeJS.CpuUsage;
 import Process = NodeJS.Process;
-import Timeout = NodeJS.Timeout;
-import { CounterBase } from "./NodeCounter/CounterBase";
+import { ICounter } from "./NodeCounter/CounterBase";
 import { IInfoData, IInfoDescription, IInfoSection } from "./types";
-declare type HrTime = [number, number];
 interface INodeInfoData extends IInfoData {
     cpuSystem: number;
     cpuUser: number;
@@ -16,26 +14,16 @@ interface INodeInfoData extends IInfoData {
     ramHeapTotal: number;
     ramHeapUsed: number;
     ramRss: number;
-    loopDelay: number;
 }
 /**
  * Provides the Node.JS-related information: RAM, CPU load.
  */
 declare class NodeInfo implements IInfoSection {
     protected process: Process;
-    protected counter?: CounterBase | undefined;
-    /**
-     * The interval at which the event loop delay is measured, in milliseconds.
-     *
-     * This spreads over multiple ticks of the loop to limit measurement costs.
-     */
-    static EVENT_LOOP_INTERVAL: number;
+    protected counter?: ICounter | undefined;
     protected info: INodeInfoData;
     protected latestCpu: CpuUsage;
-    protected latestDelay: number;
     protected latestPoll: number;
-    protected latestTime: HrTime;
-    protected timer?: Timeout;
     /**
      * @param process
      *   The NodeJS process module or a stub for it.
@@ -44,7 +32,7 @@ declare class NodeInfo implements IInfoSection {
      *
      * @constructor
      */
-    constructor(process: Process, counter?: CounterBase | undefined);
+    constructor(process: Process, counter?: ICounter | undefined);
     /**
      * Describe the metrics provided by this service.
      *
@@ -67,14 +55,5 @@ declare class NodeInfo implements IInfoSection {
      *   The normalized time spent since last polling.
      */
     protected pollCpuUsage(): CpuUsageNormalized;
-    protected pollLoop(): number;
-    /**
-     * Inspired by https://github.com/keymetrics/pmx
-     *
-     * @see https://github.com/keymetrics/pmx/blob/master/lib/probes/loop_delay.js
-     *
-     * Used under its MIT license, per pmx README.md
-     */
-    protected startEventLoopObserver(): void;
 }
 export { NodeInfo, INodeInfoData, };

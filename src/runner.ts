@@ -1,32 +1,15 @@
-import { createHash } from "crypto";
+import {createHash} from "crypto";
 import fs from "fs";
-import { sprintf } from "sprintf-js";
 
-import { argv, argv0, exit, hrtime, pid } from "process";
+import {argv, argv0, exit, hrtime, pid} from "process";
 
-import { CheapCounter } from "./NodeCounter/CheapCounter";
-import { CostlyCounter } from "./NodeCounter/CostlyCounter";
-import { CounterBase, LogFunction } from "./NodeCounter/CounterBase";
-import { NrCounter } from "./NodeCounter/NrCounter";
+import {CheapCounter} from "./NodeCounter/CheapCounter";
+import {CostlyCounter} from "./NodeCounter/CostlyCounter";
+import {CounterBase} from "./NodeCounter/CounterBase";
+import {NrCounter} from "./NodeCounter/NrCounter";
+import {LogFunction, timingLog} from "./types";
 
 // ---- Tools ------------------------------------------------------------------
-
-const logT0 = Date.now();
-
-/**
- * timingLog wraps a sprintf() call by prepending the time since command start.
- *
- * @param {string} format
- * @param {any[]} args
- */
-const timingLog: LogFunction = (format: string, ...args: any[]): void => {
-  const logFormat = "%7s: " + format;
-  const logTime = new Date(Date.now() - logT0).getTime();
-  const formattedLogTime = (logTime / 1000).toFixed(3);
-  args.unshift(formattedLogTime);
-  // tslint:disable-next-line:no-console
-  console.log(sprintf(logFormat, ...args));
-};
 
 /**
  * Active sync wait.
@@ -143,5 +126,4 @@ setTimeout(() => {
 
 export {
   milliwait,
-  timingLog,
-};
+  };

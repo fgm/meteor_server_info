@@ -5,12 +5,9 @@ import CpuUsage = NodeJS.CpuUsage;
 import CpuUsageNormalized = NodeJS.CpuUsage;
 import MemoryUsage = NodeJS.MemoryUsage;
 import Process = NodeJS.Process;
-import Timeout = NodeJS.Timeout;
 
-import {CounterBase} from "./NodeCounter/CounterBase";
+import {ICounter} from "./NodeCounter/CounterBase";
 import {IInfoData, IInfoDescription, IInfoSection} from "./types";
-
-type HrTime = [number, number];
 
 interface INodeInfoData extends IInfoData {
   cpuSystem:    number,
@@ -19,7 +16,6 @@ interface INodeInfoData extends IInfoData {
   ramHeapTotal: number,
   ramHeapUsed:  number,
   ramRss:       number,
-  loopDelay:    number,
 }
 
 /**
@@ -27,19 +23,9 @@ interface INodeInfoData extends IInfoData {
  */
 class NodeInfo implements IInfoSection {
 
-  /**
-   * The interval at which the event loop delay is measured, in milliseconds.
-   *
-   * This spreads over multiple ticks of the loop to limit measurement costs.
-   */
-  public static EVENT_LOOP_INTERVAL: number = 10000;
-
   protected info: INodeInfoData;
   protected latestCpu: CpuUsage = { user: 0, system: 0 };
-  protected latestDelay: number = 0;
   protected latestPoll: number = 0;
-  protected latestTime: HrTime;
-  protected timer?: Timeout;
 
   /**
    * @param process
@@ -49,24 +35,21 @@ class NodeInfo implements IInfoSection {
    *
    * @constructor
    */
-  constructor(protected process: Process, protected counter?: CounterBase) {
+  constructor(protected process: Process, protected counter?: ICounter) {
     this.info = {
       cpuSystem:    0,
       cpuUser:      0,
-      loopDelay:    0,
       ramExternal:  0,
       ramHeapTotal: 0,
       ramHeapUsed:  0,
       ramRss:       0,
     };
     // Initialize the latestPoll/latestCpu properties.
-    this.latestTime = process.hrtime();
     this.pollCpuUsage();
 
-    // Initialize the NodeJS loop observers.
-    this.startEventLoopObserver();
-    if (typeof counter !== "undefined") {
-      counter.start();
+    // Initialize the NodeJS loop counter if applicable.
+    if (typeof this.counter !== "undefined") {
+      this.counter.start();
     }
   }
 
@@ -85,10 +68,6 @@ class NodeInfo implements IInfoSection {
       },
       cpuUser: {
         label: "CPU user seconds since last sample. May be > 1 on multiple cores.",
-        type: numberTypeName,
-      },
-      loopDelay: {
-        label: "The delay of the Node.JS event loop",
         type: numberTypeName,
       },
       ramExternal: {
@@ -121,7 +100,6 @@ class NodeInfo implements IInfoSection {
     const result: INodeInfoData      = {
       cpuSystem:    cpu.system,
       cpuUser:      cpu.user,
-      loopDelay:    this.pollLoop(),
       ramExternal:  ram.external,
       ramHeapTotal: ram.heapTotal,
       ramHeapUsed:  ram.heapUsed,
@@ -134,11 +112,6 @@ class NodeInfo implements IInfoSection {
    * Stop metrics collection, releasing timers.
    */
   public stop() {
-    if (typeof this.timer !== "undefined") {
-      clearInterval(this.timer);
-      delete this.timer;
-    }
-
     if (typeof this.counter !== "undefined") {
       this.counter.stop();
       delete this.counter;
@@ -170,31 +143,6 @@ class NodeInfo implements IInfoSection {
       user:   (reading1.user - reading0.user) / tsDiff,
     };
     return result;
-  }
-
-  protected pollLoop(): number {
-    return this.latestDelay;
-  }
-
-  /**
-   * Inspired by https://github.com/keymetrics/pmx
-   *
-   * @see https://github.com/keymetrics/pmx/blob/master/lib/probes/loop_delay.js
-   *
-   * Used under its MIT license, per pmx README.md
-   */
-  protected startEventLoopObserver() {
-    this.timer = setInterval(() => {
-        const newTime: HrTime = process.hrtime();
-        const delay: number =
-          (newTime[0] - this.latestTime [0]) * 1E3 +
-          (newTime[1] - this.latestTime [1]) / 1e6 -
-          NodeInfo.EVENT_LOOP_INTERVAL;
-        this.latestTime = newTime;
-        this.latestDelay = delay;
-        // tslint:disable-next-line:no-console
-        console.log("Delay: ", Number(delay).toFixed(2));
-      }, NodeInfo.EVENT_LOOP_INTERVAL);
   }
 }
 

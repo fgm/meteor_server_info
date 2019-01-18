@@ -1,88 +1,63 @@
-import { hrtime } from "process";
-
+import {hrtime} from "process";
+import {
+  IInfoData,
+  IInfoDescription,
+  IInfoSection,
+  LogFunction,
+  NanoTs,
+  nullLogger,
+} from "../types";
 import Timeout = NodeJS.Timeout;
-
-/**
- * The result of a watch() iteration: a previous/current pair of nanotimestamps.
- *
- * It can only represent positive durations.
- *
- * TODO Remove this workaround workaround after Node >= 10.7 with bigint.
- */
-class NanoTs {
-  /**
-   * Ensures normalize values: only positive integers, nanosec < 1E9.
-   *
-   * Converts extra nsec to extra seconds if needed.
-   *
-   * @param seconds
-   * @param nanosec
-   */
-  constructor(protected seconds: number = 0, protected nanosec: number = 0) {
-    // Ensure integer values to avoid float rounding issues.
-    this.seconds = Math.trunc(Math.abs(seconds));
-    this.nanosec = Math.trunc(Math.abs(nanosec));
-    if (this.nanosec > 1E9) {
-      const remainder = this.nanosec % 1E9;
-      this.seconds += (this.nanosec - remainder / 1E9);
-      this.nanosec = remainder;
-    }
-  }
-
-  /**
-   * Subtract a *smaller* NanoTs from a larger one.
-   *
-   * @param other
-   *
-   * @throws Error
-   *   In case of data corruption, or if the other value is larger than the instance.
-   */
-  public sub(other: NanoTs): NanoTs {
-    let ndiff = this.nanosec - other.nanosec;
-    if (Math.abs(ndiff) >= 1E9) {
-      throw new Error("Data corruption detected: 0 <= nsec <= 1E9, so nsec diff cannot be >= 1E9");
-    }
-    let sdiff = this.seconds - other.seconds;
-    if (Math.abs(sdiff) > 1E21) {
-      throw new Error("ECMA-262 only guarantees 21 digits of accuracy, cannot subtract accurately");
-    }
-
-    if (sdiff < 0) {
-      throw new Error("Subtracted value is larger than base value: result would be negative.");
-    }
-
-    if (ndiff < 0) {
-      // -1E9 <= ndiff < 0 by construction, so just add 1 sec:
-      // sdiff > 0 and sdiff integer => sdiff - 1 >= 0.
-      sdiff -= 1;
-      ndiff += 1E9;
-    }
-
-    return new NanoTs(sdiff, ndiff);
-  }
-}
 
 // TODO: convert to [bigint, bigint] after Meteor (1.9 ?) switches to NodeJS >= 10.7.
 type WatchResult = [NanoTs, NanoTs];
 
-/**
- * The type for fonctions compatible with "console.log(sprintf("
- */
-type LogFunction = (format: string, ...args: any[]) => void;
+interface ICounter {
+  /**
+   * Retrieve the latest sampled results.
+   *
+   * MAY reset some information: see NrCounter for an example.
+   */
+  getLastPoll(): IInfoData;
+
+  /**
+   * Store the latest sampled results.
+   *
+   * @param info
+   *   The latest sampled results.
+   *
+   * This method is only meant for internal or test use.
+   */
+  setLastPoll(info: IInfoData): void;
+
+  /**
+   * Start metric sampling.
+   */
+  start(): void;
+
+  /**
+   * Stop metric sampling.
+   */
+  stop(): void;
+}
 
 /**
- * nullLogger is a silent logger usable by Counter classes.
+ * The general logic of counters may imply TWO different looping constructs:
  *
- * @param {string}_format
- * @param {any[]} _args
+ * - a metrics loop, which generates work values
+ * - a polling loop, which gathers current work values and stores them for review
+ *
+ * In the simple CheapCounter, there is no specific metric loop, but
+ * CostlyCounter and NrCounter use a separate metrics "loop" made of alternate
+ * setTimeout()/setImmediate() jumps running around the NodeJS event loop.
  */
-const nullLogger: LogFunction = (_format: string, ..._args: any[]): void => { return; };
-
-class CounterBase {
+class CounterBase implements ICounter, IInfoSection {
   /**
    * The latest time measurement, in nanoseconds.
    */
   protected lastNSec: NanoTs;
+
+  protected lastPoll: IInfoData = {};
 
   protected timer?: Timeout;
 
@@ -100,8 +75,30 @@ class CounterBase {
     return 1000;
   }
 
+  public getInfo(): IInfoData {
+    return this.lastPoll;
+  }
+
+  public getDescription(): IInfoDescription {
+    return {};
+  }
+
   /**
-   * Start the metric collection.
+   * @inheritDoc
+   */
+  public getLastPoll(): IInfoData {
+    return this.lastPoll;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public setLastPoll(info: IInfoData): void {
+    this.lastPoll = info;
+  }
+
+  /**
+   * Start the polling loop. Child classes will also start a metric loop.
    *
    * @return Timeout
    *   A timer instance usable with this.stop() to stop collection.
@@ -133,7 +130,7 @@ class CounterBase {
   /**
    * Observe the current metrics value and update last nanotimestamp.
    */
-  public watch(): WatchResult {
+  protected watch(): WatchResult {
     const prev = this.lastNSec;
 
     // TODO replace this Node 8 version by the one below after Node >= 10.7.
@@ -145,14 +142,13 @@ class CounterBase {
     const nsec: bigint = (hrtime as any).bigint() as bigint;
     */
     this.lastNSec = nsec;
+
     return [prev, nsec];
   }
 }
 
 export {
   CounterBase,
-  LogFunction,
+  ICounter,
   WatchResult,
-
-  nullLogger,
 };
