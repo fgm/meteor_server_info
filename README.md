@@ -3,6 +3,7 @@
 - A NPM version (derivative work) of [percolate:server-info]
 - Rewritten in TypeScript 3 for Meteor 1.6-1.8
 - Without the AWS-specific and extra sections, not relevant for most usages.
+- With 3 original Node.JS EventLoop metrics collectors (see "Configuration")
 
 [![Build Status](https://travis-ci.org/fgm/meteor_server_info.svg?branch=master)](https://travis-ci.org/fgm/meteor_server_info)
 [![codecov](https://codecov.io/gh/fgm/meteor_server_info/branch/master/graph/badge.svg)](https://codecov.io/gh/fgm/meteor_server_info)
@@ -55,14 +56,17 @@ following server keys:
 - `eventLoopStrategy`: the strategy to use to instrument the event loop and CPU
   - `cheap`: similar to [PM2] or [pebble/event-loop-lag]; low CPU cost : expect 
     around 0.5% on 2019 hardware,
-    very limited accuracy, will usually under-estimate the loop latency.
+    very limited accuracy, will usually under-estimate the actual loop latency.
   - `costly`: inspired by a [Dynatrace article], a much more accurate strategy,
-    tracing each tick of the event loop ; this is much more costly since this
-    disables the event loop "poll phase wait" optimization: expect 5% on 2019 hardware
-  - `nr`: inspired by NewRelic CPU time per tick, a more intuitive metric, built
-    on top of the `costly` algorithm, with an extra CPU cost: expect 6% on 2019
-    hardware.
-
+    tracing each tick of the event loop ; this is much also more costly since 
+    it disables the event loop "poll phase wait" optimization: expect 5% load 
+    on 2019 hardware
+  - `nr`: inspired by NewRelic "CPU time per tick", a more intuitive metric, 
+    built on top of the `costly` algorithm, with an extra CPU cost: expect 6% 
+    load on 2019 hardware.
+  - if that key is undefined, the event loop metrics collection is disabled, to
+    keep costs at an absolute minimum like the legacy MeteorServerInfo.
+    
 [pebble/event-loop-lag]: https://github.com/pebble/event-loop-lag
 [percolate:server-info]: https://atmospherejs.com/percolate/server-info
 [PM2]: https://github.com/keymetrics/pmx/blob/1.3/lib/default_probes/pacemaker.js

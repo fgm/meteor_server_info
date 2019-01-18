@@ -38,10 +38,16 @@ interface IInfoDescriptions {
   [key: string]: IInfoDescription,
 }
 
+/**
+ * The settings expected to be found in Meteor.settings.serverInfo.
+ *
+ * The eventLoopStrategy defaults to no measurement, to avoid their cost.
+ */
 interface IServerInfoSettings {
   pass: string,
   path: string,
   user: string,
+  eventLoopStrategy?: CounterType,
 }
 
 const defaultSettings: IServerInfoSettings = {
@@ -80,14 +86,13 @@ class ServerInfo {
     webApp: typeof WebApp,
     public mongoInternals: object,
     public facts: IFacts,
-    counterType?: CounterType,
   ) {
     this.settings = meteor.settings.serverInfo as IServerInfoSettings || defaultSettings;
     this.connectHandlers = webApp.connectHandlers;
     // We only use the Meteor default_server key, but we keep the whole Meteor
     // object in case the default_server key might change.
-    const counter: CounterBase | undefined = (typeof counterType !== "undefined")
-      ? CounterFactory.create(counterType)
+    const counter: CounterBase | undefined = (typeof this.settings.eventLoopStrategy !== "undefined")
+      ? CounterFactory.create(this.settings.eventLoopStrategy )
       : undefined;
     this.sections = {
       mongo:    new MongoInfo(this.mongoInternals),

@@ -19,10 +19,16 @@ interface IMeteor {
 interface IInfoDescriptions {
     [key: string]: IInfoDescription;
 }
+/**
+ * The settings expected to be found in Meteor.settings.serverInfo.
+ *
+ * The eventLoopStrategy defaults to no measurement, to avoid their cost.
+ */
 interface IServerInfoSettings {
     pass: string;
     path: string;
     user: string;
+    eventLoopStrategy?: CounterType;
 }
 declare type Connect2Auth = (user: string, pass: string) => (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
 declare class ServerInfo {
@@ -48,7 +54,7 @@ declare class ServerInfo {
      *
      * TODO check whether Meteor.default_server might actually change over time.
      */
-    constructor(meteor: IMeteor, webApp: typeof WebApp, mongoInternals: object, facts: IFacts, counterType?: CounterType);
+    constructor(meteor: IMeteor, webApp: typeof WebApp, mongoInternals: object, facts: IFacts);
     /**
      * Collect the descriptions provided for the metrics.
      *
