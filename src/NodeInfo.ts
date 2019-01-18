@@ -7,6 +7,7 @@ import MemoryUsage = NodeJS.MemoryUsage;
 import Process = NodeJS.Process;
 import Timeout = NodeJS.Timeout;
 
+import {CounterBase} from "./NodeCounter/CounterBase";
 import {IInfoData, IInfoDescription, IInfoSection} from "./types";
 
 type HrTime = [number, number];
@@ -43,10 +44,12 @@ class NodeInfo implements IInfoSection {
   /**
    * @param process
    *   The NodeJS process module or a stub for it.
+   * @constructor
+   *   The event loop observer to use, if not empty.
    *
    * @constructor
    */
-  constructor(protected process: Process) {
+  constructor(protected process: Process, protected counter?: CounterBase) {
     this.info = {
       cpuSystem:    0,
       cpuUser:      0,
@@ -59,7 +62,12 @@ class NodeInfo implements IInfoSection {
     // Initialize the latestPoll/latestCpu properties.
     this.latestTime = process.hrtime();
     this.pollCpuUsage();
+
+    // Initialize the NodeJS loop observers.
     this.startEventLoopObserver();
+    if (typeof counter !== "undefined") {
+      counter.start();
+    }
   }
 
   /**
@@ -123,12 +131,17 @@ class NodeInfo implements IInfoSection {
   }
 
   /**
-   * Stop metrics collection, releasing timer.
+   * Stop metrics collection, releasing timers.
    */
   public stop() {
     if (typeof this.timer !== "undefined") {
       clearInterval(this.timer);
-      this.timer = undefined;
+      delete this.timer;
+    }
+
+    if (typeof this.counter !== "undefined") {
+      this.counter.stop();
+      delete this.counter;
     }
   }
 

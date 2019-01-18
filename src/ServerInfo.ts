@@ -14,6 +14,8 @@ import {WebApp} from "meteor/webapp";
 
 // Module imports.
 import {MongoInfo} from "./MongoInfo";
+import {CounterBase} from "./NodeCounter/CounterBase";
+import {CounterFactory, CounterType} from "./NodeCounter/CounterFactory";
 import {NodeInfo} from "./NodeInfo";
 import {SessionInfo} from "./SessionInfo";
 import {SocketInfo} from "./SocketInfo";
@@ -78,14 +80,18 @@ class ServerInfo {
     webApp: typeof WebApp,
     public mongoInternals: object,
     public facts: IFacts,
+    counterType?: CounterType,
   ) {
     this.settings = meteor.settings.serverInfo as IServerInfoSettings || defaultSettings;
     this.connectHandlers = webApp.connectHandlers;
     // We only use the Meteor default_server key, but we keep the whole Meteor
     // object in case the default_server key might change.
+    const counter: CounterBase | undefined = (typeof counterType !== "undefined")
+      ? CounterFactory.create(counterType)
+      : undefined;
     this.sections = {
       mongo:    new MongoInfo(this.mongoInternals),
-      process:  new NodeInfo(process),
+      process:  new NodeInfo(process, counter),
       sessions: new SessionInfo(this.meteor.default_server.sessions),
       sockets:  new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
     };

@@ -2,8 +2,34 @@
 import Timeout = NodeJS.Timeout;
 /**
  * The result of a watch() iteration: a previous/current pair of nanotimestamps.
+ *
+ * It can only represent positive durations.
+ *
+ * TODO Remove this workaround workaround after Node >= 10.7 with bigint.
  */
-declare type WatchResult = [bigint, bigint];
+declare class NanoTs {
+    protected seconds: number;
+    protected nanosec: number;
+    /**
+     * Ensures normalize values: only positive integers, nanosec < 1E9.
+     *
+     * Converts extra nsec to extra seconds if needed.
+     *
+     * @param seconds
+     * @param nanosec
+     */
+    constructor(seconds?: number, nanosec?: number);
+    /**
+     * Subtract a *smaller* NanoTs from a larger one.
+     *
+     * @param other
+     *
+     * @throws Error
+     *   In case of data corruption, or if the other value is larger than the instance.
+     */
+    sub(other: NanoTs): NanoTs;
+}
+declare type WatchResult = [NanoTs, NanoTs];
 /**
  * The type for fonctions compatible with "console.log(sprintf("
  */
@@ -20,7 +46,7 @@ declare class CounterBase {
     /**
      * The latest time measurement, in nanoseconds.
      */
-    protected lastNSec: bigint;
+    protected lastNSec: NanoTs;
     protected timer?: Timeout;
     /**
      * @param log

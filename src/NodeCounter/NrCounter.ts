@@ -83,7 +83,8 @@ class NrCounter extends CounterBase {
     const tickCount = Math.max(this.tickCount, 1);
 
     // The time elapsed since the previous watch() call.
-    const clockMsec = Number(nsec - prev) / 1E6; // nsec to msec.
+    // TODO replace by nsec - nprev after Node 10.7.
+    const clockMsec = Number(nsec.sub(prev)) / 1E6; // nsec to msec.
 
     const ticksPerMin = tickCount / clockMsec * 60 * 1000;
     const cpuMsecPerTick = cpuMsecSinceLast / tickCount;

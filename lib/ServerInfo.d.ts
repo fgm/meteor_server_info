@@ -3,6 +3,7 @@ import connect from "connect";
 import { IncomingMessage, ServerResponse } from "http";
 import "process";
 import { WebApp } from "meteor/webapp";
+import { CounterType } from "./NodeCounter/CounterFactory";
 import { IInfoDescription, IInfoSection } from "./types";
 interface IFacts {
     _factsByPackage: {
@@ -47,7 +48,7 @@ declare class ServerInfo {
      *
      * TODO check whether Meteor.default_server might actually change over time.
      */
-    constructor(meteor: IMeteor, webApp: typeof WebApp, mongoInternals: object, facts: IFacts);
+    constructor(meteor: IMeteor, webApp: typeof WebApp, mongoInternals: object, facts: IFacts, counterType?: CounterType);
     /**
      * Collect the descriptions provided for the metrics.
      *

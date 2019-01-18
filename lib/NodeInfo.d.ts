@@ -6,6 +6,7 @@ import CpuUsage = NodeJS.CpuUsage;
 import CpuUsageNormalized = NodeJS.CpuUsage;
 import Process = NodeJS.Process;
 import Timeout = NodeJS.Timeout;
+import { CounterBase } from "./NodeCounter/CounterBase";
 import { IInfoData, IInfoDescription, IInfoSection } from "./types";
 declare type HrTime = [number, number];
 interface INodeInfoData extends IInfoData {
@@ -22,6 +23,7 @@ interface INodeInfoData extends IInfoData {
  */
 declare class NodeInfo implements IInfoSection {
     protected process: Process;
+    protected counter?: CounterBase | undefined;
     /**
      * The interval at which the event loop delay is measured, in milliseconds.
      *
@@ -37,10 +39,12 @@ declare class NodeInfo implements IInfoSection {
     /**
      * @param process
      *   The NodeJS process module or a stub for it.
+     * @constructor
+     *   The event loop observer to use, if not empty.
      *
      * @constructor
      */
-    constructor(process: Process);
+    constructor(process: Process, counter?: CounterBase | undefined);
     /**
      * Describe the metrics provided by this service.
      *
@@ -53,7 +57,7 @@ declare class NodeInfo implements IInfoSection {
      */
     getInfo(): INodeInfoData;
     /**
-     * Stop metrics collection, releasing timer.
+     * Stop metrics collection, releasing timers.
      */
     stop(): void;
     /**

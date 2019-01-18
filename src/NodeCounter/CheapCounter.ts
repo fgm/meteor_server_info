@@ -41,7 +41,8 @@ class CheapCounter extends CounterBase {
    */
   public watch(): WatchResult {
     const [prev, nsec] = super.watch();
-    const actualLapMsec = Number(nsec - prev) / 1E6;
+    // TODO Convert to nsec - prev after Node >= 10.7.
+    const actualLapMsec = Number(nsec.sub(prev)) / 1E6;
     const expectedLapMsec = CheapCounter.LAP;
 
     const diffMsec = Math.max(parseFloat((actualLapMsec - expectedLapMsec).toFixed(2)), 0);

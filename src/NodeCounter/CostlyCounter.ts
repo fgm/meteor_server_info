@@ -59,7 +59,8 @@ class CostlyCounter extends CounterBase {
     const [prev, nsec] = super.watch();
 
     // The time elapsed since the previous watch() call.
-    const actualLapµsec = Number(nsec - prev) / 1E3; // nsed to µsec.
+    // TODO replace by nsec - nprev after Node >= 10.7
+    const actualLapµsec = Number(nsec.sub(prev)) / 1E3; // nsed to µsec.
 
     // The time expected to have elapsed since the previous watch() call.
     const expectedLapµsec = CostlyCounter.LAP * 1E3; // msec to µsec.
