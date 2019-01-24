@@ -88,9 +88,9 @@ class NrCounter extends CounterBase {
   /**
    * @inheritDoc
    */
-  public getInfo(): IInfoData {
+  public getLastPoll(): IInfoData {
     return {
-      ...this.getLastPoll(),
+      ...this.lastPoll,
       // maxCpuMsec is collected in real time, not by polling.
       maxCpuMsec: this.counterReset(),
     };

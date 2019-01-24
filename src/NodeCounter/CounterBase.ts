@@ -31,6 +31,11 @@ interface ICounter {
   setLastPoll(info: IInfoData): void;
 
   /**
+   * Describe the contents returned by getLastPoll().
+   */
+  getDescription(): IInfoDescription;
+
+  /**
    * Start metric sampling.
    */
   start(): void;
@@ -80,7 +85,9 @@ class CounterBase implements ICounter, IInfoSection {
   }
 
   public getDescription(): IInfoDescription {
-    return {};
+    return {
+      lastNSec: { label: "The last time the loop was polled, in nanoseconds", type: "NanoTs" }
+    };
   }
 
   /**
@@ -142,6 +149,9 @@ class CounterBase implements ICounter, IInfoSection {
     const nsec: bigint = (hrtime as any).bigint() as bigint;
     */
     this.lastNSec = nsec;
+    this.setLastPoll({
+      lastNSec: nsec,
+    });
 
     return [prev, nsec];
   }

@@ -61,7 +61,7 @@ class NodeInfo implements IInfoSection {
    */
   public getDescription(): IInfoDescription {
     const numberTypeName = "number";
-    const description = {
+    let description = {
       cpuSystem: {
         label: "CPU system seconds since last sample. May be > 1 on multiple cores.",
         type: numberTypeName,
@@ -88,6 +88,9 @@ class NodeInfo implements IInfoSection {
       },
     };
 
+    if (typeof this.counter !== "undefined") {
+      description = { ...description, ...this.counter.getDescription() };
+    }
     return description;
   }
 
@@ -97,7 +100,7 @@ class NodeInfo implements IInfoSection {
   public getInfo(): INodeInfoData {
     const ram:    MemoryUsage        = this.process.memoryUsage();
     const cpu:    CpuUsageNormalized = this.pollCpuUsage();
-    const result: INodeInfoData      = {
+    let result: INodeInfoData      = {
       cpuSystem:    cpu.system,
       cpuUser:      cpu.user,
       ramExternal:  ram.external,
@@ -105,6 +108,9 @@ class NodeInfo implements IInfoSection {
       ramHeapUsed:  ram.heapUsed,
       ramRss:       ram.rss,
     };
+    if (typeof this.counter !== "undefined") {
+      result = { ...result, ...this.counter.getLastPoll()}
+    }
     return result;
   }
 

@@ -19,6 +19,10 @@ interface ICounter {
      */
     setLastPoll(info: IInfoData): void;
     /**
+     * Describe the contents returned by getLastPoll().
+     */
+    getDescription(): IInfoDescription;
+    /**
      * Start metric sampling.
      */
     start(): void;

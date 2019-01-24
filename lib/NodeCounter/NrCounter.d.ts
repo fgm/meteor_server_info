@@ -43,7 +43,7 @@ declare class NrCounter extends CounterBase {
     /**
      * @inheritDoc
      */
-    getInfo(): IInfoData;
+    getLastPoll(): IInfoData;
     /**
      * Start the metric collection.
      *

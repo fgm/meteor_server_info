@@ -11,6 +11,10 @@ class MockCounter implements ICounter {
   protected info: IInfoData = {};
   public started: boolean = false;
 
+  public getDescription(): IInfoDescription {
+    return {};
+  }
+
   public getLastPoll(): IInfoData {
     return this.info;
   }
@@ -86,8 +90,25 @@ function testNodeInfo() {
     collector.stop();
   });
 
-  test("All CPU usage information is documented", () => {
+  test("All CPU usage information is documented without a counter", () => {
     const collector = getTestingNodeCollector();
+    const info: INodeInfoData = collector.getInfo();
+    const descriptions: IInfoDescription = collector.getDescription();
+    const keys = Object.keys(info);
+    expect(keys.length).toBeGreaterThan(0);
+    for (const key of keys) {
+      const description = descriptions[key];
+      expect(description).toBeDefined();
+      expect(description).toHaveProperty("type");
+      expect(description).toHaveProperty("label");
+      expect(description.label.length).toBeGreaterThan(0);
+      expect(typeof info[key]).toBe(description.type);
+    }
+    collector.stop();
+  });
+
+  test("All CPU usage information is documented with a counter", () => {
+    const collector = getTestingNodeCollector(new MockCounter());
     const info: INodeInfoData = collector.getInfo();
     const descriptions: IInfoDescription = collector.getDescription();
     const keys = Object.keys(info);
