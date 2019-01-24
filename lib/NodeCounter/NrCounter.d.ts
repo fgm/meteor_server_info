@@ -1,9 +1,10 @@
 /// <reference types="node" />
 import CpuUsage = NodeJS.CpuUsage;
+import Immediate = NodeJS.Immediate;
 import { IInfoData, IInfoDescription, LogFunction } from "../types";
 import { CounterBase, WatchResult } from "./CounterBase";
 /**
- * This counter attempts to mimic NewRelics "CPU time per tick" metric.
+ * This counter attempts to mimic NewRelic's "CPU time per tick" metric.
  *
  * It is expensive because:
  *
@@ -11,13 +12,17 @@ import { CounterBase, WatchResult } from "./CounterBase";
  *   sees the "immediate" job queues and does not linger in the poll phase.
  * - its code is cheap but runs on each tick.
  *
- * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 5% CPU load.
+ * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 6% CPU load.
  */
 declare class NrCounter extends CounterBase {
-    protected immediateTimer?: NodeJS.Immediate;
+    protected log: LogFunction;
+    /**
+     * The current setImmediate() result.
+     */
+    protected immediateTimer?: Immediate;
     protected latestCounterUsage: CpuUsage;
     protected latestWatchUsage: CpuUsage;
-    protected maxCpuMsec: number;
+    protected cpuMsecMax: number;
     /**
      * The latest tick count.
      */
@@ -55,6 +60,9 @@ declare class NrCounter extends CounterBase {
      * @inheritDoc
      */
     stop(): void;
+    /**
+     * @inheritDoc
+     */
     protected watch(): WatchResult;
     /**
      * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).

@@ -12,7 +12,6 @@ import { CounterBase, WatchResult } from "./CounterBase";
  * - its code is cheap but runs on each tick.
  *
  * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 5% CPU load.
- *
  */
 declare class CostlyCounter extends CounterBase {
     protected log: LogFunction;
@@ -41,9 +40,12 @@ declare class CostlyCounter extends CounterBase {
      */
     start(): NodeJS.Timeout;
     /**
-     * Stop metrics collection.
+     * @inheritDoc
      */
     stop(): void;
+    /**
+     * @inheritDoc
+     */
     protected watch(): WatchResult;
     /**
      * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).

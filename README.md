@@ -102,7 +102,7 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 ## Changelog
 
-* (WIP) 1.2.1
+* 1.2.1
   * Node.JS EventLoop and CPU metrics, 3 strategies at different accuracy and cost levels
   * TypeScript 3.2 
 * 1.2.0

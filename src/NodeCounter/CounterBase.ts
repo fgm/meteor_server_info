@@ -86,7 +86,7 @@ class CounterBase implements ICounter, IInfoSection {
 
   public getDescription(): IInfoDescription {
     return {
-      lastNSec: { label: "The last time the loop was polled, in nanoseconds", type: "NanoTs" }
+      lastNSec: { label: "The last time the loop was polled, in nanoseconds", type: "NanoTs" },
     };
   }
 

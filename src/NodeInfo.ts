@@ -63,11 +63,11 @@ class NodeInfo implements IInfoSection {
     const numberTypeName = "number";
     let description = {
       cpuSystem: {
-        label: "CPU system seconds since last sample. May be > 1 on multiple cores.",
+        label: "CPU system seconds since last polling. May be > 1 on multiple cores.",
         type: numberTypeName,
       },
       cpuUser: {
-        label: "CPU user seconds since last sample. May be > 1 on multiple cores.",
+        label: "CPU user seconds since last polling. May be > 1 on multiple cores.",
         type: numberTypeName,
       },
       ramExternal: {
@@ -109,7 +109,7 @@ class NodeInfo implements IInfoSection {
       ramRss:       ram.rss,
     };
     if (typeof this.counter !== "undefined") {
-      result = { ...result, ...this.counter.getLastPoll()}
+      result = { ...result, ...this.counter.getLastPoll()};
     }
     return result;
   }

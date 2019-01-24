@@ -13,7 +13,6 @@ import {CounterBase, WatchResult } from "./CounterBase";
  * - its code is cheap but runs on each tick.
  *
  * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 5% CPU load.
- *
  */
 class CostlyCounter extends CounterBase {
   /**
@@ -55,19 +54,19 @@ class CostlyCounter extends CounterBase {
         type: numberTypeName,
       },
       individualLapMsec: {
-        label: "Average milliseconds per tick",
+        label: "Average milliseconds per tick since last polling",
         type: numberTypeName,
       },
       lag: {
-        label: "Difference between expected and actual tick duration",
+        label: "Difference between expected and actual tick duration since last polling",
         type: numberTypeName,
       },
       tickCount: {
         label: "Ticks since last polling",
         type: numberTypeName,
       },
-      ticksPerMin: {
-        label: "Ticks per minute",
+      ticksPerSec: {
+        label: "Ticks per second",
         type: numberTypeName,
       },
     };
@@ -86,14 +85,18 @@ class CostlyCounter extends CounterBase {
   }
 
   /**
-   * Stop metrics collection.
+   * @inheritDoc
    */
   public stop() {
     if (typeof this.immediateTimer !== "undefined") {
       clearImmediate(this.immediateTimer);
+      this.immediateTimer = undefined;
     }
   }
 
+  /**
+   * @inheritDoc
+   */
   protected watch(): WatchResult {
     const [prev, nsec] = super.watch();
 
@@ -105,7 +108,7 @@ class CostlyCounter extends CounterBase {
     // TODO replace by nsec - nprev after Node >= 10.7
     const clockMsec = nsec.sub(prev).toMsec();
 
-    const ticksPerMin = tickCount / clockMsec * 60 * 1000;
+    const ticksPerSec = tickCount / clockMsec * 1000;
 
     // The time expected to have elapsed since the previous watch() call.
     const expectedLapMsec = CostlyCounter.LAP;
@@ -120,8 +123,8 @@ class CostlyCounter extends CounterBase {
     }
     const individualLapMsec = Math.round(clockMsec / tickCount);
     this.log(
-      "%4d ticks in %4d msec (expected %4d) => Ticks/minute: %5d, diff %3d. Lag per loop: %6.2f, Time per loop: %6d",
-      tickCount, clockMsec, expectedLapMsec, ticksPerMin, diffMsec, lag, individualLapMsec,
+      "%4d ticks in %4d msec (expected %4d) => Ticks/sec: %5d, diff %3d. Lag per loop: %6.2f, Time per loop: %6d",
+      tickCount, clockMsec, expectedLapMsec, ticksPerSec, diffMsec, lag, individualLapMsec,
     );
 
     this.tickCount = 0;
@@ -133,7 +136,7 @@ class CostlyCounter extends CounterBase {
       individualLapMsec,
       lag,
       tickCount,
-      ticksPerMin,
+      ticksPerSec,
     });
 
     return [prev, nsec];

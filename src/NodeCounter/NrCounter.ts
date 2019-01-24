@@ -1,11 +1,13 @@
 import CpuUsage = NodeJS.CpuUsage;
+import Immediate = NodeJS.Immediate;
+
 import {cpuUsage} from "process";
 
 import {IInfoData, IInfoDescription, LogFunction, nullLogger} from "../types";
 import {CounterBase, WatchResult} from "./CounterBase";
 
 /**
- * This counter attempts to mimic NewRelics "CPU time per tick" metric.
+ * This counter attempts to mimic NewRelic's "CPU time per tick" metric.
  *
  * It is expensive because:
  *
@@ -13,13 +15,17 @@ import {CounterBase, WatchResult} from "./CounterBase";
  *   sees the "immediate" job queues and does not linger in the poll phase.
  * - its code is cheap but runs on each tick.
  *
- * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 5% CPU load.
+ * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 6% CPU load.
  */
 class NrCounter extends CounterBase {
-  protected immediateTimer?: NodeJS.Immediate;
+  /**
+   * The current setImmediate() result.
+   */
+  protected immediateTimer?: Immediate;
+
   protected latestCounterUsage: CpuUsage;
   protected latestWatchUsage: CpuUsage;
-  protected maxCpuMsec: number;
+  protected cpuMsecMax: number;
 
   /**
    * The latest tick count.
@@ -30,11 +36,11 @@ class NrCounter extends CounterBase {
    * @param log
    *   A "console.log(sprintf(" compatible function.
    */
-  constructor(log: LogFunction = nullLogger) {
+  constructor(protected log: LogFunction = nullLogger) {
     super(log);
     this.immediateTimer = undefined;
     this.latestCounterUsage = this.latestWatchUsage = cpuUsage();
-    this.maxCpuMsec = 0;
+    this.cpuMsecMax = 0;
     this.tickCount = 0;
   }
 
@@ -47,8 +53,8 @@ class NrCounter extends CounterBase {
    *   max(cpuMsecPerTick) since last call to counterReset().
    */
   public counterReset() {
-    const max = this.maxCpuMsec;
-    this.maxCpuMsec = 0;
+    const max = this.cpuMsecMax;
+    this.cpuMsecMax = 0;
     return max;
   }
 
@@ -62,24 +68,24 @@ class NrCounter extends CounterBase {
         label: "Milliseconds since last polling",
         type: numberTypeName,
       },
+      cpuMsec: {
+        label: "CPU milliseconds used by process since last polling.",
+        type: numberTypeName,
+      },
+      cpuMsecMax: {
+        label: "Maximum of CPU milliseconds used by process since last fetch of the same counter, not last polling",
+        type: numberTypeName,
+      },
       cpuMsecPerTick: {
         label: "Average CPU milliseconds used by process per tick since last polling",
-        type: numberTypeName,
-      },
-      cpuMsecSinceLast: {
-        label: "CPU milliseconds used by process since last polling",
-        type: numberTypeName,
-      },
-      maxCpuMsec: {
-        label: "Maximum of CPU milliseconds used by process since last fetch of the same counter, not last polling",
         type: numberTypeName,
       },
       tickCount: {
         label: "Ticks since last polling",
         type: numberTypeName,
       },
-      ticksPerMin: {
-        label: "Ticks per minute",
+      ticksPerSec: {
+        label: "Ticks per second",
         type: numberTypeName,
       },
     };
@@ -91,8 +97,8 @@ class NrCounter extends CounterBase {
   public getLastPoll(): IInfoData {
     return {
       ...this.lastPoll,
-      // maxCpuMsec is collected in real time, not by polling.
-      maxCpuMsec: this.counterReset(),
+      // cpuMsecMax is collected in real time, not by polling.
+      cpuMsecMax: this.counterReset(),
     };
   }
 
@@ -121,6 +127,9 @@ class NrCounter extends CounterBase {
     }
   }
 
+  /**
+   * @inheritDoc
+   */
   protected watch(): WatchResult {
     const [prev, nsec] = super.watch();
 
@@ -136,10 +145,11 @@ class NrCounter extends CounterBase {
     // TODO replace by nsec - nprev after Node >= 10.7
     const clockMsec = nsec.sub(prev).toMsec();
 
-    const ticksPerMin = tickCount / clockMsec * 60 * 1000;
+    const ticksPerSec = tickCount / clockMsec * 1000;
     const cpuMsecPerTick = cpuMsecSinceLast / tickCount;
-    this.log("%4d ticks in %4d msec => Ticks/minute: %5d, CPU usage %5d msec => CPU/tick %6.3f msec",
-      tickCount, clockMsec, ticksPerMin, cpuMsecSinceLast, cpuMsecPerTick,
+    this.log(
+      "%4d ticks in %4d msec => Ticks/sec: %5d, CPU usage %5d msec => CPU/tick %6.3f msec",
+      tickCount, clockMsec, ticksPerSec, cpuMsecSinceLast, cpuMsecPerTick,
     );
 
     this.tickCount = 0;
@@ -149,7 +159,7 @@ class NrCounter extends CounterBase {
       cpuMsecPerTick,
       cpuMsecSinceLast,
       tickCount,
-      ticksPerMin,
+      ticksPerSec,
     });
 
     return [prev, nsec];
@@ -170,8 +180,8 @@ class NrCounter extends CounterBase {
     const usage = cpuUsage();
     const {user, system} = cpuUsage(this.latestCounterUsage);
     const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
-    if (cpuMsecSinceLast > this.maxCpuMsec) {
-      this.maxCpuMsec = cpuMsecSinceLast;
+    if (cpuMsecSinceLast > this.cpuMsecMax) {
+      this.cpuMsecMax = cpuMsecSinceLast;
     }
 
     this.tickCount++;
