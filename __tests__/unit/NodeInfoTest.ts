@@ -1,16 +1,35 @@
 import * as process from "process";
 import {INodeInfoData, NodeInfo} from "../../src/NodeInfo";
-import {IInfoDescription} from "../../src/types";
+import {IInfoData, IInfoDescription} from "../../src/types";
 import CpuUsage = NodeJS.CpuUsage;
 import MemoryUsage = NodeJS.MemoryUsage;
+import {ICounter} from "../../src/NodeCounter/CounterBase";
 
 //import Process = NodeJS.Process;
+
+class MockCounter implements ICounter {
+  protected info: IInfoData = {};
+  public started: boolean = false;
+
+  public getLastPoll(): IInfoData {
+    return this.info;
+  }
+  public setLastPoll(info: IInfoData): void {
+    this.info = info;
+  }
+  public start(): void {
+    this.started = true;
+  }
+  public stop(): void {
+    this.started = false;
+  }
+}
 
 /**
  * These tests run on node 8.4, to process.hrtime.bigint() is not available yet.
  */
 function testNodeInfo() {
-  function getTestingNodeCollector(): NodeInfo {
+  function getTestingNodeCollector(counter?: ICounter): NodeInfo {
     const mockProcess: any = {
       _cpu: {
         system: 1,
@@ -30,7 +49,7 @@ function testNodeInfo() {
       },
       hrtime: process.hrtime,
     };
-    return new NodeInfo(mockProcess);
+    return new NodeInfo(mockProcess, counter);
   }
 
   test("constructor initializes CPU usage", () => {
@@ -82,7 +101,16 @@ function testNodeInfo() {
       expect(typeof info[key]).toBe(description.type);
     }
     collector.stop();
-  })
+  });
+
+  test("counters are started and stopped", () => {
+    const counter: MockCounter = new MockCounter();
+    const collector = getTestingNodeCollector(counter);
+    expect(counter.started).toBeTruthy();
+    collector.stop();
+    expect(counter.started).toBeFalsy();
+  });
+
 }
 
 export {

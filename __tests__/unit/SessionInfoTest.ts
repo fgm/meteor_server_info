@@ -4,7 +4,7 @@ import {
   SessionInfo,
   ISubscription,
 } from "../../src/SessionInfo";
-import {IInfoDescription} from "../../src/types";
+import {IInfoDescription, NanoTs} from "../../src/types";
 
 function testSessionInfo() {
   function getTestingSessionCollector(): SessionInfo {
@@ -146,7 +146,7 @@ function testSessionInfo() {
     ]);
     const actualKeys = Array.from(users.keys()).sort();
     expect(actualKeys).toEqual(Array.from(expectations.keys()).sort());
-    users.forEach((v: number, k: number | string) => {
+    users.forEach((v: number | NanoTs, k: number | string) => {
       expect(typeof k === "number").toBe(true);
       expect(v).toBe(expectations.get(k as number));
     });
