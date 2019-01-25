@@ -5,6 +5,7 @@
     "module": "commonjs",                     /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
     "lib": [
       "es2017",
+      "esnext",
       "dom"
     ],
     // JS[X]

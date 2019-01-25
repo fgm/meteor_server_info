@@ -1,0 +1,30 @@
+digraph eventLoop {
+  label = "Node.JS Event Loop\nFrom https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/"
+  rotation = 27;
+  fontsize=20;
+  edge [ fontsize=20 ];
+
+  node [ shape=none, fontsize=20 ];
+
+  timers [ label="1.0: Timers\nExecute setTimeout(), setInterval() callbacks" ];
+  pending [ label="2.0: Pending callbacks\nI/O callbacks deferred to the next iteration\ne.g. ECONNREFUSED on TCP connect" ];
+  idle [ label="3.0: Idle/Prepare\nNode.JS internal use only" ];
+  poll [ label="4.0: Poll\nRetrieve I/O events, execute I/O callbacks\nexcept close, timers, setImmediate()\nwait for timers" ]
+  check [ label="5.0: Check\nExecute setImmediate() callbacks" ];
+  close [ label="6.0: Close callbacks\nExecute close callbacks" ];
+
+  timers  -> pending;
+  pending -> idle;
+  idle    -> poll;
+  poll    -> check;
+  check   -> close;
+  close   -> timers;
+
+  edge [ dir=both, style=dotted, label="" ];
+  nextTickQueue -> timers  [ taillabel="1.1",     headlabel="1.2   " ];
+  nextTickQueue -> pending [ taillabel="    2.1", headlabel="2.2   " ];
+  nextTickQueue -> idle    [ taillabel="3.1",     headlabel="3.2   " ];
+  nextTickQueue -> poll    [ taillabel="4.1    ", headlabel="4.2"    ];
+  nextTickQueue -> check   [ taillabel="5.1    ", headlabel="    5.2"];
+  nextTickQueue -> close   [ taillabel="6.1  ",   headlabel="6.2"    ];
+}

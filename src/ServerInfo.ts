@@ -14,10 +14,23 @@ import {WebApp} from "meteor/webapp";
 
 // Module imports.
 import {MongoInfo} from "./MongoInfo";
-import {INodeInfoStore, NodeInfo} from "./NodeInfo";
+import {ICounter} from "./NodeCounter/CounterBase";
+import {
+  CounterFactory,
+  CounterType,
+} from "./NodeCounter/CounterFactory";
+import {NodeInfo} from "./NodeInfo";
 import {SessionInfo} from "./SessionInfo";
 import {SocketInfo} from "./SocketInfo";
-import {Counter, IInfoDescription, IInfoSection } from "./types";
+import {
+  Counter,
+  IInfoDescription,
+  IInfoSection,
+  LogFunction,
+  NanoTs,
+  nullLogger,
+  timingLog,
+} from "./types";
 
 interface IFacts {
   _factsByPackage: {
@@ -36,19 +49,27 @@ interface IInfoDescriptions {
   [key: string]: IInfoDescription,
 }
 
+/**
+ * The settings expected to be found in Meteor.settings.serverInfo.
+ *
+ * The eventLoopStrategy defaults to no measurement, to avoid their cost.
+ */
 interface IServerInfoSettings {
+  eventLoopStrategy?: CounterType,
   pass: string,
   path: string,
   user: string,
+  verbose: boolean,
 }
 
 const defaultSettings: IServerInfoSettings = {
   pass: "secureme",
   path: "/serverInfo",
   user: "insecure",
+  verbose: false,
 };
 
-// Connect 2 Authentication returns a middleware
+// Connect 2 Authentication returns a middleware.
 type Connect2Auth = (user: string, pass: string) =>
   (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
 
@@ -58,25 +79,24 @@ class ServerInfo {
   };
   public connectHandlers: connect.Server;
   public settings: IServerInfoSettings;
-  public store: {
-    process: INodeInfoStore,
-  };
 
   /**
    * {constructor}
    *
-   * @param {Meteor} Meteor
+   * @param {Meteor} meteor
    *   The Meteor global.
-   * @param {WebApp} WebApp
+   * @param {WebApp} webApp
    *   The Meteor WebApp service.
-   * @param {MongoInternals} MongoInternals
+   * @param {MongoInternals} mongoInternals
    *   The Meteor MongoInternals service.
-   * @param {Facts} Facts
+   * @param {Facts} facts
    *   The Meteor Facts collector service.
    *
    * TODO check whether Meteor.default_server might actually change over time.
    */
   constructor(
+    // We only use the Meteor default_server key, but we keep the whole Meteor
+    // object in case the default_server key might change.
     public meteor: IMeteor,
     webApp: typeof WebApp,
     public mongoInternals: object,
@@ -84,14 +104,13 @@ class ServerInfo {
   ) {
     this.settings = meteor.settings.serverInfo as IServerInfoSettings || defaultSettings;
     this.connectHandlers = webApp.connectHandlers;
-    // We only use the Meteor default_server key, but we keep the whole Meteor
-    // object in case the default_server key might change.
-    this.store = {
-      process: {} as INodeInfoStore,
-    };
+    const log: LogFunction = this.settings.verbose ? timingLog : nullLogger;
+    const counter: ICounter | undefined = (typeof this.settings.eventLoopStrategy === "string")
+      ? CounterFactory.create(this.settings.eventLoopStrategy, log)
+      : undefined;
     this.sections = {
       mongo:    new MongoInfo(this.mongoInternals),
-      process:  new NodeInfo(process, this.store.process),
+      process:  new NodeInfo(process, counter),
       sessions: new SessionInfo(this.meteor.default_server.sessions),
       sockets:  new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
     };
@@ -128,8 +147,8 @@ class ServerInfo {
   /**
    * Route controller serving the collected info.
    *
-   * @param req
-   *   A Connect request.
+   * @param _
+   *   A Connect request. Ignored.
    * @param res
    *   A Connect response.
    */
@@ -141,8 +160,8 @@ class ServerInfo {
   /**
    * Route controller serving the documentation about the collected info.
    *
-   * @param req
-   *   A Connect request.
+   * @param _
+   *   A Connect request: ignored
    * @param res
    *   A Connect response.
    */
@@ -176,11 +195,11 @@ class ServerInfo {
   /**
    * Reducer for getInformation().
    *
-   * @param  {{}} accu
+   * @param {{}} accu
    *   Accumulator.
    * @param {String} section
    *   The name of the information section.
-   * @param  {{}} infoInstance
+   * @param {{}} infoInstance
    *   The section information.
    *
    * @return {*}
@@ -192,24 +211,24 @@ class ServerInfo {
    */
   protected infoReducer(accu: any, [section, infoInstance]: [string, IInfoSection]) {
     interface IValues {
-      [key: string]: number,
-      [key: number]: number,
+      [key: string]: number|NanoTs,
+      [key: number]: number|NanoTs,
     }
     const infoData = infoInstance.getInfo();
     let idk = "";
     let idv = null;
     const infoRaw: {
-      [key: string]: number|IValues,
+      [key: string]: number|NanoTs|IValues,
     } = {};
     for ([idk, idv] of Object.entries(infoData)) {
-      if (typeof idv === "number") {
+      if (typeof idv === "number" || idv instanceof NanoTs) {
         infoRaw[idk] = idv;
       } else {
         // Then it is a Counter: get the values from the map
         const tmp: IValues = (infoRaw[idk] || {}) as IValues;
         const idv2: Counter = idv;
         let k: number|string = "";
-        let v: number = 0;
+        let v: number|NanoTs = 0;
         for ([k, v] of idv2) {
           tmp[k] = v;
         }
@@ -223,6 +242,5 @@ class ServerInfo {
 }
 
 export {
-  INodeInfoStore,
   ServerInfo,
 };

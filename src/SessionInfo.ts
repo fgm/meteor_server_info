@@ -151,7 +151,9 @@ class SessionInfo implements IInfoSection {
   protected incrementCounter(counter: Counter, key: any, increment: number = 1) {
     this.initKey(counter, key);
     // get() is guaranteed to be defined because we just did initKey().
-    counter.set(key, counter.get(key)! + increment);
+    // TODO: inline after Node >= 10.7 when NanoTs is removed.
+    const val: number = counter.get(key)! as number;
+    counter.set(key, val + increment);
   }
 
   /**

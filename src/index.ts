@@ -1,3 +1,7 @@
+import { CounterType } from "./NodeCounter/CounterFactory";
 import { ServerInfo } from "./ServerInfo";
 
-export default ServerInfo;
+export {
+  CounterType,
+  ServerInfo,
+};

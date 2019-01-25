@@ -3,7 +3,7 @@ import connect from "connect";
 import { IncomingMessage, ServerResponse } from "http";
 import "process";
 import { WebApp } from "meteor/webapp";
-import { INodeInfoStore } from "./NodeInfo";
+import { CounterType } from "./NodeCounter/CounterFactory";
 import { IInfoDescription, IInfoSection } from "./types";
 interface IFacts {
     _factsByPackage: {
@@ -19,10 +19,17 @@ interface IMeteor {
 interface IInfoDescriptions {
     [key: string]: IInfoDescription;
 }
+/**
+ * The settings expected to be found in Meteor.settings.serverInfo.
+ *
+ * The eventLoopStrategy defaults to no measurement, to avoid their cost.
+ */
 interface IServerInfoSettings {
+    eventLoopStrategy?: CounterType;
     pass: string;
     path: string;
     user: string;
+    verbose: boolean;
 }
 declare type Connect2Auth = (user: string, pass: string) => (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
 declare class ServerInfo {
@@ -34,19 +41,16 @@ declare class ServerInfo {
     };
     connectHandlers: connect.Server;
     settings: IServerInfoSettings;
-    store: {
-        process: INodeInfoStore;
-    };
     /**
      * {constructor}
      *
-     * @param {Meteor} Meteor
+     * @param {Meteor} meteor
      *   The Meteor global.
-     * @param {WebApp} WebApp
+     * @param {WebApp} webApp
      *   The Meteor WebApp service.
-     * @param {MongoInternals} MongoInternals
+     * @param {MongoInternals} mongoInternals
      *   The Meteor MongoInternals service.
-     * @param {Facts} Facts
+     * @param {Facts} facts
      *   The Meteor Facts collector service.
      *
      * TODO check whether Meteor.default_server might actually change over time.
@@ -69,8 +73,8 @@ declare class ServerInfo {
     /**
      * Route controller serving the collected info.
      *
-     * @param req
-     *   A Connect request.
+     * @param _
+     *   A Connect request. Ignored.
      * @param res
      *   A Connect response.
      */
@@ -78,8 +82,8 @@ declare class ServerInfo {
     /**
      * Route controller serving the documentation about the collected info.
      *
-     * @param req
-     *   A Connect request.
+     * @param _
+     *   A Connect request: ignored
      * @param res
      *   A Connect response.
      */
@@ -99,11 +103,11 @@ declare class ServerInfo {
     /**
      * Reducer for getInformation().
      *
-     * @param  {{}} accu
+     * @param {{}} accu
      *   Accumulator.
      * @param {String} section
      *   The name of the information section.
-     * @param  {{}} infoInstance
+     * @param {{}} infoInstance
      *   The section information.
      *
      * @return {*}
@@ -115,4 +119,4 @@ declare class ServerInfo {
      */
     protected infoReducer(accu: any, [section, infoInstance]: [string, IInfoSection]): any;
 }
-export { INodeInfoStore, ServerInfo, };
+export { ServerInfo, };

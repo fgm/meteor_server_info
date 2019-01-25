@@ -34,16 +34,6 @@ class MongoInfo implements IInfoSection {
     this.muxes = mongoInternals.defaultRemoteCollectionDriver().mongo._observeMultiplexers;
   }
 
-  private defaultInfo(): IMongoInfoData {
-    return {
-      nObserveHandles: 0,
-      oplogObserveHandles: new Map(),
-      oplogObserveHandlesCount: 0,
-      pollingObserveHandles: new Map(),
-      pollingObserveHandlesCount: 0,
-    };
-  }
-
   /**
    * Describe the metrics provided by this service.
    *
@@ -115,9 +105,11 @@ class MongoInfo implements IInfoSection {
     if (!this.info[type].has(collectionName)) {
       this.info[type].set(collectionName, 0);
     }
+    // TODO: inline after Node >= 10.7 when NanoTs is removed.
+    const val: number = this.info[type]!.get(collectionName)! as number;
     this.info[type].set(collectionName,
       // Counter was defined in constructor, collection in previous line.
-      this.info[type]!.get(collectionName)! + 1);
+      val + 1);
   }
 
   /**
@@ -139,6 +131,16 @@ class MongoInfo implements IInfoSection {
     const collectionName = driver._cursorDescription.collectionName;
     const observerType = driver._usesOplog ? "oplogObserveHandles" : "pollingObserveHandles";
     this.buildCollectionInfo(observerType, collectionName);
+  }
+
+  private defaultInfo(): IMongoInfoData {
+    return {
+      nObserveHandles: 0,
+      oplogObserveHandles: new Map(),
+      oplogObserveHandlesCount: 0,
+      pollingObserveHandles: new Map(),
+      pollingObserveHandlesCount: 0,
+    };
   }
 }
 

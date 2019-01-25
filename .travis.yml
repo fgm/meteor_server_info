@@ -4,10 +4,6 @@ env:
   global:
     - CODECOV_TOKEN="1c1292a0-2193-47b1-b9d4-34dc058f10b2"
 
-matrix:
-  allow_failures:
-    - node_js: 10
-
 node_js:
   - 8
   - 10

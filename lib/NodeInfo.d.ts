@@ -5,6 +5,7 @@ import CpuUsage = NodeJS.CpuUsage;
  */
 import CpuUsageNormalized = NodeJS.CpuUsage;
 import Process = NodeJS.Process;
+import { ICounter } from "./NodeCounter/CounterBase";
 import { IInfoData, IInfoDescription, IInfoSection } from "./types";
 interface INodeInfoData extends IInfoData {
     cpuSystem: number;
@@ -15,28 +16,23 @@ interface INodeInfoData extends IInfoData {
     ramRss: number;
 }
 /**
- * An off-instance structure to preserve information between instance creations.
- */
-interface INodeInfoStore {
-    latestCpu: CpuUsage;
-    latestPoll: number;
-}
-/**
  * Provides the Node.JS-related information: RAM, CPU load.
  */
 declare class NodeInfo implements IInfoSection {
     protected process: Process;
-    protected store: INodeInfoStore;
+    protected counter?: ICounter | undefined;
     protected info: INodeInfoData;
+    protected latestCpu: CpuUsage;
+    protected latestPoll: number;
     /**
      * @param process
      *   The NodeJS process module or a stub for it.
-     * @param store
-     *   An object in which to store information between instance creations.
+     * @constructor
+     *   The event loop observer to use, if not empty.
      *
      * @constructor
      */
-    constructor(process: Process, store: INodeInfoStore);
+    constructor(process: Process, counter?: ICounter | undefined);
     /**
      * Describe the metrics provided by this service.
      *
@@ -49,6 +45,10 @@ declare class NodeInfo implements IInfoSection {
      */
     getInfo(): INodeInfoData;
     /**
+     * Stop metrics collection, releasing timers.
+     */
+    stop(): void;
+    /**
      * Update the CPU reading and return it normalized per second.
      *
      * @return
@@ -56,4 +56,4 @@ declare class NodeInfo implements IInfoSection {
      */
     protected pollCpuUsage(): CpuUsageNormalized;
 }
-export { NodeInfo, INodeInfoData, INodeInfoStore, };
+export { NodeInfo, INodeInfoData, };

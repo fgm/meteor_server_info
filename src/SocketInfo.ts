@@ -23,13 +23,6 @@ class SocketInfo implements IInfoSection {
     this.info = this.defaultInfo();
   }
 
-  private defaultInfo(): ISocketInfoData {
-    return {
-      nSockets: 0,
-      nSocketsWithLivedataSessions: 0,
-    };
-  }
-
   /**
    * Describe the metrics provided by this service.
    *
@@ -67,6 +60,13 @@ class SocketInfo implements IInfoSection {
     }
 
     return this.info;
+  }
+
+  private defaultInfo(): ISocketInfoData {
+    return {
+      nSockets: 0,
+      nSocketsWithLivedataSessions: 0,
+    };
   }
 }
 
