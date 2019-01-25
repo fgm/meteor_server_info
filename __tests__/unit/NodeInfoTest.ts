@@ -76,18 +76,20 @@ function testNodeInfo() {
 
     const t0 = process.hrtime();
     // Eat CPU, don't let system use it.
-    for (let i = 0; i < 2E6; i++) {
+    for (let i = 0; i < 1E7; i++) {
       i++;
     }
-    const t1 = process.hrtime(t0);
-    // Convert hrtime from tuple to seconds to compare with CPU usage.
-    const lag = t1[0] + t1[1] / 1E9;
+    setImmediate(() => {
+      const t1 = process.hrtime(t0);
+      // Convert hrtime from tuple to seconds to compare with CPU usage.
+      const lag = t1[0] + t1[1] / 1E9;
 
-    const info: INodeInfoData = collector.getInfo();
-    expect(info.cpuSystem).toBeGreaterThanOrEqual(0);
-    expect(info.cpuSystem).toBeLessThan(1);
-    expect(info.cpuUser).toBeGreaterThan(lag);
-    collector.stop();
+      const info: INodeInfoData = collector.getInfo();
+      expect(info.cpuSystem).toBeGreaterThanOrEqual(0);
+      expect(info.cpuSystem).toBeLessThan(1);
+      expect(info.cpuUser).toBeGreaterThan(lag);
+      collector.stop();
+    })
   });
 
   test("All CPU usage information is documented without a counter", () => {
