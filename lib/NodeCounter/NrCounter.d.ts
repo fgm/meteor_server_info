@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import CpuUsage = NodeJS.CpuUsage;
 import Immediate = NodeJS.Immediate;
 import { IInfoData, IInfoDescription, LogFunction } from "../types";
@@ -20,9 +19,10 @@ declare class NrCounter extends CounterBase {
      * The current setImmediate() result.
      */
     protected immediateTimer?: Immediate;
+    protected clockMsecLagMax: number;
+    protected cpuMsecMax: number;
     protected latestCounterUsage: CpuUsage;
     protected latestWatchUsage: CpuUsage;
-    protected cpuMsecMax: number;
     /**
      * The latest tick count.
      */
@@ -37,10 +37,15 @@ declare class NrCounter extends CounterBase {
      *
      * This method is only public for tests: it is not meant for external use.
      *
-     * @return {number}
-     *   max(cpuMsecPerTick) since last call to counterReset().
+     * @return
+     *   - max(cpuMsecPerTick)
+     *   - max(abs(clockMsecLag))
+     *   Both since last call to counterReset().
      */
-    counterReset(): number;
+    counterReset(): {
+        clockMsecLagMax: number;
+        cpuMsecMax: number;
+    };
     /**
      * @inheritDoc
      */
@@ -72,6 +77,14 @@ declare class NrCounter extends CounterBase {
      * "When delay is [...] less than 1, the delay will be set to 1."
      */
     protected counterImmediate(): NodeJS.Timeout;
+    /**
+     * Update the maximum CPU usage.
+     *
+     * The maximum clockMsecLag  update is done in watch() instead. This avoids
+     * the extra load of fetching the HR timer twice in a tick.
+     *
+     * @see watch
+     */
     protected counterTimer(): void;
 }
 export { NrCounter, };

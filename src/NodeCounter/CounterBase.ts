@@ -38,7 +38,7 @@ interface ICounter {
   /**
    * Start metric sampling.
    */
-  start(): void;
+  start(): Timeout;
 
   /**
    * Stop metric sampling.
@@ -81,7 +81,7 @@ class CounterBase implements ICounter, IInfoSection {
   }
 
   public getInfo(): IInfoData {
-    return this.lastPoll;
+    return this.getLastPoll();
   }
 
   public getDescription(): IInfoDescription {

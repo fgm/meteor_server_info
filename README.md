@@ -25,20 +25,22 @@ Once installed and configured, the package provides
 
 - Like the original version, this project needs the MDG [Facts] package, but not
 the `facts-ui`package. So from the project directory, add both dependencies:
-  ```bash
-  meteor add facts
-  meteor yarn add meteor_server_info
-  ```
+```
+meteor add facts
+meteor yarn add meteor_server_info
+```
 - Then, in the main JS file of the server part of the application, add code to
   initialize the package:
-    ```ecmascript 6
-    import { ServerInfo } from "meteor_server_info";
 
-    Meteor.startup(function () {
-      const serverInfo = new ServerInfo(Meteor, WebApp, MongoInternals, Facts);
-      serverInfo.register();
-    });
-    ```
+```
+import { ServerInfo } from "meteor_server_info";
+
+Meteor.startup(function () {
+  const serverInfo = new ServerInfo(Meteor, WebApp, MongoInternals, Facts);
+  serverInfo.register();
+});
+```
+
 - Edit the Meteor settings, at least to change the user and password.
 - Run your application normally.
 
@@ -58,7 +60,7 @@ that case:
 To use your development version of the module, import it locally in your
 application code. You will have access to `serverInfo` from `meteor shell`.
 
-```ecmascript 6
+```
 // Heed the "./" import.
 import { ServerInfo } from "./meteor_server_info";
 
@@ -130,6 +132,8 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 ## Changelog
 
+* 1.2.2
+  * New maxClockMsecLag in NrCounter. clockMsec replaced by clockMsecLag.
 * 1.2.1
   * Node.JS EventLoop and CPU metrics, 3 strategies at different accuracy and cost levels
   * TypeScript 3.2

@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { IInfoData, IInfoDescription, IInfoSection, LogFunction, NanoTs } from "../types";
 import Timeout = NodeJS.Timeout;
 declare type WatchResult = [NanoTs, NanoTs];
@@ -25,7 +24,7 @@ interface ICounter {
     /**
      * Start metric sampling.
      */
-    start(): void;
+    start(): Timeout;
     /**
      * Stop metric sampling.
      */

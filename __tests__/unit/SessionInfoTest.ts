@@ -1,8 +1,8 @@
 import {
-  ISessionInfoData,
   INamedSessions,
-  SessionInfo,
+  ISessionInfoData,
   ISubscription,
+  SessionInfo,
 } from "../../src/SessionInfo";
 import {IInfoDescription, NanoTs} from "../../src/types";
 

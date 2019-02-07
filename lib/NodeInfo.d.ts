@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import CpuUsage = NodeJS.CpuUsage;
 /**
  * Same structure as NodeJS CpuUsage, but not same meaning for the values.

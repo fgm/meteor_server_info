@@ -2,6 +2,7 @@ import CpuUsage = NodeJS.CpuUsage;
 import Immediate = NodeJS.Immediate;
 
 import {cpuUsage} from "process";
+import {sprintf} from "sprintf-js";
 
 import {IInfoData, IInfoDescription, LogFunction, nullLogger} from "../types";
 import {CounterBase, WatchResult} from "./CounterBase";
@@ -23,9 +24,10 @@ class NrCounter extends CounterBase {
    */
   protected immediateTimer?: Immediate;
 
+  protected clockMsecLagMax: number = 0;
+  protected cpuMsecMax: number = 0;
   protected latestCounterUsage: CpuUsage;
   protected latestWatchUsage: CpuUsage;
-  protected cpuMsecMax: number;
 
   /**
    * The latest tick count.
@@ -40,7 +42,6 @@ class NrCounter extends CounterBase {
     super(log);
     this.immediateTimer = undefined;
     this.latestCounterUsage = this.latestWatchUsage = cpuUsage();
-    this.cpuMsecMax = 0;
     this.tickCount = 0;
   }
 
@@ -49,11 +50,17 @@ class NrCounter extends CounterBase {
    *
    * This method is only public for tests: it is not meant for external use.
    *
-   * @return {number}
-   *   max(cpuMsecPerTick) since last call to counterReset().
+   * @return
+   *   - max(cpuMsecPerTick)
+   *   - max(abs(clockMsecLag))
+   *   Both since last call to counterReset().
    */
   public counterReset() {
-    const max = this.cpuMsecMax;
+    const max = {
+      clockMsecLagMax: this.clockMsecLagMax,
+      cpuMsecMax: this.cpuMsecMax,
+    };
+    this.clockMsecLagMax = 0;
     this.cpuMsecMax = 0;
     return max;
   }
@@ -64,8 +71,14 @@ class NrCounter extends CounterBase {
   public getDescription(): IInfoDescription {
     const numberTypeName = "number";
     return {
-      clockMsec: {
-        label: "Milliseconds since last polling",
+      clockMsecLag: {
+        label: sprintf("Milliseconds deviation from %d since last polling", CounterBase.LAP),
+        type: numberTypeName,
+      },
+      clockMsecLagMax: {
+        label:
+          sprintf("Maximum of milliseconds deviation from %d since last fetch of the same counter, not last polling",
+            CounterBase.LAP),
         type: numberTypeName,
       },
       cpuMsec: {
@@ -98,7 +111,7 @@ class NrCounter extends CounterBase {
     return {
       ...this.lastPoll,
       // cpuMsecMax is collected in real time, not by polling.
-      cpuMsecMax: this.counterReset(),
+      ...this.counterReset(),
     };
   }
 
@@ -135,7 +148,7 @@ class NrCounter extends CounterBase {
 
     const usage = cpuUsage();
     const {user, system} = cpuUsage(this.latestWatchUsage);
-    const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
+    const cpuMsec = (user + system) / 1E3; // µsec to msec.
 
     // The actual number of loops performed since the previous watch() call.
     // Math.max is used in case this code runs before the loop counter when LAP <= 1 msec.
@@ -144,20 +157,24 @@ class NrCounter extends CounterBase {
     // The time elapsed since the previous watch() call.
     // TODO replace by nsec - nprev after Node >= 10.7
     const clockMsec = nsec.sub(prev).toMsec();
+    const clockMsecLag = clockMsec - CounterBase.LAP;
+    if (Math.abs(clockMsecLag) > Math.abs(this.clockMsecLagMax)) {
+      this.clockMsecLagMax = clockMsecLag;
+    }
 
     const ticksPerSec = tickCount / clockMsec * 1000;
-    const cpuMsecPerTick = cpuMsecSinceLast / tickCount;
+    const cpuMsecPerTick = cpuMsec / tickCount;
     this.log(
       "%4d ticks in %4d msec => Ticks/sec: %5d, CPU usage %5d msec => CPU/tick %6.3f msec",
-      tickCount, clockMsec, ticksPerSec, cpuMsecSinceLast, cpuMsecPerTick,
+      tickCount, clockMsec, ticksPerSec, cpuMsec, cpuMsecPerTick,
     );
 
     this.tickCount = 0;
     this.latestWatchUsage = usage;
     this.setLastPoll({
-      clockMsec,
+      clockMsecLag,
+      cpuMsec,
       cpuMsecPerTick,
-      cpuMsecSinceLast,
       tickCount,
       ticksPerSec,
     });
@@ -176,17 +193,29 @@ class NrCounter extends CounterBase {
     return setTimeout(this.counterTimer.bind(this), 0);
   }
 
+  /**
+   * Update the maximum CPU usage.
+   *
+   * The maximum clockMsecLag  update is done in watch() instead. This avoids
+   * the extra load of fetching the HR timer twice in a tick.
+   *
+   * @see watch
+   */
   protected counterTimer() {
+    // Evaluate maximum cpuMsecMax.
     const usage = cpuUsage();
     const {user, system} = cpuUsage(this.latestCounterUsage);
-    const cpuMsecSinceLast = (user + system) / 1E3; // µsec to msec.
-    if (cpuMsecSinceLast > this.cpuMsecMax) {
-      this.cpuMsecMax = cpuMsecSinceLast;
+    const cpuMsec = (user + system) / 1E3; // µsec to msec.
+    if (cpuMsec > this.cpuMsecMax) {
+      this.cpuMsecMax = cpuMsec;
     }
-
-    this.tickCount++;
-    this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
     this.latestCounterUsage = usage;
+
+    // Update per-tick counter.
+    this.tickCount++;
+
+    // Rearm.
+    this.immediateTimer = setImmediate(this.counterImmediate.bind(this));
   }
 }
 

@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import Immediate = NodeJS.Immediate;
 import { IInfoDescription, LogFunction } from "../types";
 import { CounterBase, WatchResult } from "./CounterBase";
