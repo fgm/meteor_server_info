@@ -1,3 +1,5 @@
+/// <reference types="meteor" />
+/// <reference types="node" />
 import connect from "connect";
 import { IncomingMessage, ServerResponse } from "http";
 import "process";

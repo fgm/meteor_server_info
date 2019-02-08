@@ -134,6 +134,8 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 * 1.2.2
   * New maxClockMsecLag in NrCounter. clockMsec replaced by clockMsecLag.
+  * TypeScript 3.3
+  * Over 70% new test coverage for NrCounter and CounterBase.
 * 1.2.1
   * Node.JS EventLoop and CPU metrics, 3 strategies at different accuracy and cost levels
   * TypeScript 3.2

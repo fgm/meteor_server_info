@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import CpuUsage = NodeJS.CpuUsage;
 import Immediate = NodeJS.Immediate;
 import { IInfoData, IInfoDescription, LogFunction } from "../types";

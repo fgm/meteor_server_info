@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { IInfoData, IInfoDescription, IInfoSection, LogFunction, NanoTs } from "../types";
 import Timeout = NodeJS.Timeout;
 declare type WatchResult = [NanoTs, NanoTs];

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { IInfoData, IInfoDescription, LogFunction } from "../types";
 import { CounterBase, WatchResult } from "./CounterBase";
 /**
