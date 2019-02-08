@@ -6,6 +6,12 @@
 import {sprintf} from "sprintf-js";
 
 const logT0 = Date.now();
+
+/**
+ * The type for a Jest "done" test argument.
+ */
+type IDone = () => void;
+
 /**
  * The type for functions compatible with "console.log(sprintf("
  */
@@ -143,6 +149,7 @@ class NanoTs {
 
 export {
   Counter,
+  IDone,
   IInfoData,
   IInfoSection,
   IInfoDescription,

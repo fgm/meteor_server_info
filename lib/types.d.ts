@@ -1,4 +1,8 @@
 /**
+ * The type for a Jest "done" test argument.
+ */
+declare type IDone = () => void;
+/**
  * The type for functions compatible with "console.log(sprintf("
  */
 declare type LogFunction = (format: string, ...args: any[]) => void;
@@ -84,5 +88,5 @@ declare class NanoTs {
      */
     toMsec(): number;
 }
-export { Counter, IInfoData, IInfoSection, IInfoDescription, NanoTs, nullLogger, timingLog, };
+export { Counter, IDone, IInfoData, IInfoSection, IInfoDescription, NanoTs, nullLogger, timingLog, };
 export { LogFunction };

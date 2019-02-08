@@ -2,11 +2,11 @@ import CpuUsage = NodeJS.CpuUsage;
 import MemoryUsage = NodeJS.MemoryUsage;
 import Timeout = NodeJS.Timeout;
 
-import * as process from "process";
+import "process";
 
 import {ICounter} from "../../src/NodeCounter/CounterBase";
 import {INodeInfoData, NodeInfo} from "../../src/NodeInfo";
-import {IInfoData, IInfoDescription} from "../../src/types";
+import {IDone, IInfoData, IInfoDescription} from "../../src/types";
 
 class MockCounter implements ICounter {
   public started: boolean = false;
@@ -24,7 +24,9 @@ class MockCounter implements ICounter {
   }
   public start(): Timeout {
     this.started = true;
-    return null;
+    const timeout = setTimeout(() => {}, 0);
+    clearTimeout(timeout);
+    return timeout;
   }
   public stop(): void {
     this.started = false;
@@ -71,7 +73,7 @@ function testNodeInfo() {
     collector.stop();
   });
 
-  test("CPU usage is not empty", () => {
+  test("CPU usage is not empty", (done: IDone) => {
     const collector = new NodeInfo(process);
     // Prime CPU store.
     collector.getInfo();
@@ -91,6 +93,7 @@ function testNodeInfo() {
       expect(info.cpuSystem).toBeLessThan(1);
       expect(info.cpuUser).toBeGreaterThan(lag);
       collector.stop();
+      done();
     });
   });
 
@@ -135,7 +138,6 @@ function testNodeInfo() {
     collector.stop();
     expect(counter.started).toBeFalsy();
   });
-
 }
 
 export {

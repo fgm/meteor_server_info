@@ -138,6 +138,7 @@ class NrCounter extends CounterBase {
       clearImmediate(this.immediateTimer);
       this.immediateTimer = undefined;
     }
+    super.stop();
   }
 
   /**

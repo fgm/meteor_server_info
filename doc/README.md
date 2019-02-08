@@ -50,3 +50,15 @@ The TF*TD product appears essentially constant within rounding errors.
 
 Closed source means the logic used for these cannot be verified. Loop latency is
 very similar to the PM2 metric.
+
+# Debugging notes
+
+Locate open handles when Jest complains:
+
+```typescript
+import "process";
+let timers = (process as any)._getActiveHandles().map((handle: any) => {
+  return handle.constructor;
+});
+console.log(timers);
+```
