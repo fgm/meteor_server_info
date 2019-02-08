@@ -10,12 +10,11 @@
   },
   "description": "A NPM version of the Atmosphere percolate:meteor_server_info package.",
   "dependencies": {
-    "lodash": "^4.17.11",
     "sprintf-js": "^1.1.2"
   },
   "//": "sprintf-js is only used by doc/algorithms.js",
   "devDependencies": {
-    "@types/jest": "^23.3.14",
+    "@types/jest": "^24.0.0",
     "@types/lodash": "^4.14.118",
     "@types/meteor": "^1.4.26",
     "@types/node": "^10.12.23",
@@ -23,9 +22,8 @@
     "codecov": "^3.1.0",
     "growl": "^1.10.5",
     "ink-docstrap": "^1.3.2",
-    "jest": "^23.6.0",
+    "jest": "^24.1.0",
     "npm": "^6.0.0",
-    "sprintf-js": "^1.1.2",
     "ts-jest": "^23.10.5",
     "tslint": "^5.12.0",
     "typedoc": "^0.14.2",
