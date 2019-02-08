@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { IInfoData, IInfoDescription, IInfoSection, LogFunction, NanoTs } from "../types";
 import Timeout = NodeJS.Timeout;
-declare type WatchResult = [NanoTs, NanoTs];
+declare type PollResult = [NanoTs, NanoTs];
 interface ICounter {
     /**
      * Retrieve the latest sampled results.
@@ -79,6 +79,6 @@ declare class CounterBase implements ICounter, IInfoSection {
     /**
      * Observe the current metrics value and update last nanotimestamp.
      */
-    protected watch(): WatchResult;
+    protected poll(): PollResult;
 }
-export { CounterBase, ICounter, WatchResult, };
+export { CounterBase, ICounter, PollResult, };

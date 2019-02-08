@@ -1,4 +1,3 @@
-import {hrtime} from "process";
 import {
   IInfoData,
   IInfoDescription,
@@ -10,7 +9,7 @@ import {
 import Timeout = NodeJS.Timeout;
 
 // TODO: convert to [bigint, bigint] after Meteor (1.9 ?) switches to NodeJS >= 10.7.
-type WatchResult = [NanoTs, NanoTs];
+type PollResult = [NanoTs, NanoTs];
 
 interface ICounter {
   /**
@@ -112,15 +111,14 @@ class CounterBase implements ICounter, IInfoSection {
    */
   public start(): Timeout {
     // TODO replace this Node 8 version by the one below after Node >= 10.7.
-    const hrt = hrtime();
-    this.lastNSec = new NanoTs(hrt[0], hrt[1]);
+    this.lastNSec = NanoTs.forNow();
 
     /* TODO Node 11.6 version with the next TODO
     // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
     this.lastNSec = (hrtime as any).bigint();
     */
 
-    this.timer = setInterval(this.watch.bind(this), CounterBase.LAP);
+    this.timer = setInterval(this.poll.bind(this), CounterBase.LAP);
     return this.timer;
   }
 
@@ -137,12 +135,11 @@ class CounterBase implements ICounter, IInfoSection {
   /**
    * Observe the current metrics value and update last nanotimestamp.
    */
-  protected watch(): WatchResult {
+  protected poll(): PollResult {
     const prev = this.lastNSec;
 
     // TODO replace this Node 8 version by the one below after Node >= 10.7.
-    const hrt = hrtime();
-    const nsec: NanoTs = new NanoTs(hrt[0], hrt[1]);
+    const nsec: NanoTs = NanoTs.forNow();
 
     /* TODO Node 11.6 version with the next TODO
     // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
@@ -160,5 +157,5 @@ class CounterBase implements ICounter, IInfoSection {
 export {
   CounterBase,
   ICounter,
-  WatchResult,
+  PollResult,
 };

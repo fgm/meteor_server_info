@@ -1,7 +1,7 @@
 import Immediate = NodeJS.Immediate;
 
 import {IInfoDescription, LogFunction, nullLogger} from "../types";
-import {CounterBase, WatchResult } from "./CounterBase";
+import {CounterBase, PollResult } from "./CounterBase";
 
 /**
  * This counter actually counts ticks by jumping to and fro the loop phases.
@@ -97,20 +97,20 @@ class CostlyCounter extends CounterBase {
   /**
    * @inheritDoc
    */
-  protected watch(): WatchResult {
-    const [prev, nsec] = super.watch();
+  protected poll(): PollResult {
+    const [prev, nsec] = super.poll();
 
-    // The actual number of loops performed since the previous watch() call.
+    // The actual number of loops performed since the previous poll() call.
     // Math.max is used in case this code runs before the loop counter when LAP <= 1 msec.
     const tickCount = Math.max(this.tickCount, 1);
 
-    // The time elapsed since the previous watch() call.
+    // The time elapsed since the previous poll() call.
     // TODO replace by nsec - nprev after Node >= 10.7
     const clockMsec = nsec.sub(prev).toMsec();
 
     const ticksPerSec = tickCount / clockMsec * 1000;
 
-    // The time expected to have elapsed since the previous watch() call.
+    // The time expected to have elapsed since the previous poll() call.
     const expectedLapMsec = CostlyCounter.LAP;
 
     // The extra delay incurred from expect to actual time elapsed.

@@ -1,5 +1,5 @@
 import {IInfoData, IInfoDescription, LogFunction, nullLogger} from "../types";
-import {CounterBase, WatchResult} from "./CounterBase";
+import {CounterBase, PollResult} from "./CounterBase";
 
 /**
  *
@@ -62,8 +62,8 @@ class CheapCounter extends CounterBase {
   /**
    * @inheritDoc
    */
-  protected watch(): WatchResult {
-    const [prev, nsec] = super.watch();
+  protected poll(): PollResult {
+    const [prev, nsec] = super.poll();
     const actualLapNanoTs = nsec.sub(prev);
     // TODO Convert to nsec - prev after Node >= 10.7.
     const actualLapMsec = actualLapNanoTs.toMsec();

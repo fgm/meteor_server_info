@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { IInfoData, IInfoDescription, LogFunction } from "../types";
-import { CounterBase, WatchResult } from "./CounterBase";
+import { CounterBase, PollResult } from "./CounterBase";
 /**
  *
  * It is cheap because:
@@ -36,6 +36,6 @@ declare class CheapCounter extends CounterBase {
     /**
      * @inheritDoc
      */
-    protected watch(): WatchResult;
+    protected poll(): PollResult;
 }
 export { CheapCounter, };

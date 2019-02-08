@@ -133,7 +133,7 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 ## Changelog
 
 * 1.2.2
-  * New maxClockMsecLag in NrCounter. clockMsec replaced by clockMsecLag.
+  * New tickLagMax in NrCounter. Other metrics renamed and reworded for intelligibility.
   * TypeScript 3.3
   * Over 70% new test coverage for NrCounter and CounterBase.
 * 1.2.1

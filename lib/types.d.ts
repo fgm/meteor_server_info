@@ -56,7 +56,7 @@ interface IInfoSection {
     getDescription: () => IInfoDescription;
 }
 /**
- * The result of a watch() iteration: a previous/current pair of nanotimestamps.
+ * The result of a poll() iteration: a previous/current pair of nanotimestamps.
  *
  * It can only represent positive durations.
  *
@@ -65,6 +65,10 @@ interface IInfoSection {
 declare class NanoTs {
     seconds: number;
     nanosec: number;
+    /**
+     * Construct a NanoTS for the current high-resolution time.
+     */
+    static forNow(): NanoTs;
     /**
      * Ensures normalize values: only positive integers, nanosec < 1E9.
      *

@@ -17,7 +17,7 @@ function testNrCounter() {
     const counter: NrCounter = getTestingNrCounter();
     // Force counter to store metrics without triggering the asynchronous behaviour.
     counter.counterReset();
-    (counter as any).watch();
+    (counter as any).poll();
 
     const metrics: IInfoData = counter.getLastPoll();
     const descriptions: IInfoDescription = counter.getDescription();
@@ -37,7 +37,7 @@ function testNrCounter() {
     const counter: NrCounter = getTestingNrCounter();
     // Force counter to store metrics without triggering the asynchronous behaviour.
     counter.counterReset();
-    (counter as any).watch();
+    (counter as any).poll();
 
     const metrics: IInfoData = counter.getLastPoll();
     const descriptions: IInfoDescription = counter.getDescription();
