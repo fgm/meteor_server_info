@@ -1,3 +1,5 @@
+import {hrtime} from "process";
+
 /**
  * The basic metric set type used by IInfoData.
  *
@@ -6,6 +8,12 @@
 import {sprintf} from "sprintf-js";
 
 const logT0 = Date.now();
+
+/**
+ * The type for a Jest "done" test argument.
+ */
+type IDone = () => void;
+
 /**
  * The type for functions compatible with "console.log(sprintf("
  */
@@ -75,13 +83,21 @@ interface IInfoSection {
 }
 
 /**
- * The result of a watch() iteration: a previous/current pair of nanotimestamps.
+ * The result of a poll() iteration: a previous/current pair of nanotimestamps.
  *
  * It can only represent positive durations.
  *
  * TODO Remove this workaround workaround after Node >= 10.7 with bigint.
  */
 class NanoTs {
+  /**
+   * Construct a NanoTS for the current high-resolution time.
+   */
+  public static forNow(): NanoTs {
+    const hrt = hrtime();
+    return new NanoTs(hrt[0], hrt[1]);
+  }
+
   /**
    * Ensures normalize values: only positive integers, nanosec < 1E9.
    *
@@ -143,6 +159,7 @@ class NanoTs {
 
 export {
   Counter,
+  IDone,
   IInfoData,
   IInfoSection,
   IInfoDescription,

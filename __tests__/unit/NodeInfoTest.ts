@@ -1,15 +1,16 @@
-import * as process from "process";
-import {INodeInfoData, NodeInfo} from "../../src/NodeInfo";
-import {IInfoData, IInfoDescription} from "../../src/types";
 import CpuUsage = NodeJS.CpuUsage;
 import MemoryUsage = NodeJS.MemoryUsage;
-import {ICounter} from "../../src/NodeCounter/CounterBase";
+import Timeout = NodeJS.Timeout;
 
-//import Process = NodeJS.Process;
+import "process";
+
+import {ICounter} from "../../src/NodeCounter/CounterBase";
+import {INodeInfoData, NodeInfo} from "../../src/NodeInfo";
+import {IDone, IInfoData, IInfoDescription} from "../../src/types";
 
 class MockCounter implements ICounter {
-  protected info: IInfoData = {};
   public started: boolean = false;
+  protected info: IInfoData = {};
 
   public getDescription(): IInfoDescription {
     return {};
@@ -21,8 +22,11 @@ class MockCounter implements ICounter {
   public setLastPoll(info: IInfoData): void {
     this.info = info;
   }
-  public start(): void {
+  public start(): Timeout {
     this.started = true;
+    const timeout = setTimeout(() => {}, 0);
+    clearTimeout(timeout);
+    return timeout;
   }
   public stop(): void {
     this.started = false;
@@ -69,7 +73,7 @@ function testNodeInfo() {
     collector.stop();
   });
 
-  test("CPU usage is not empty", () => {
+  test("CPU usage is not empty", (done: IDone) => {
     const collector = new NodeInfo(process);
     // Prime CPU store.
     collector.getInfo();
@@ -89,7 +93,8 @@ function testNodeInfo() {
       expect(info.cpuSystem).toBeLessThan(1);
       expect(info.cpuUser).toBeGreaterThan(lag);
       collector.stop();
-    })
+      done();
+    });
   });
 
   test("All CPU usage information is documented without a counter", () => {
@@ -133,9 +138,8 @@ function testNodeInfo() {
     collector.stop();
     expect(counter.started).toBeFalsy();
   });
-
 }
 
 export {
   testNodeInfo,
-}
+};

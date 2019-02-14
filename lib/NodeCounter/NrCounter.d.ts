@@ -1,8 +1,9 @@
 /// <reference types="node" />
 import CpuUsage = NodeJS.CpuUsage;
 import Immediate = NodeJS.Immediate;
-import { IInfoData, IInfoDescription, LogFunction } from "../types";
-import { CounterBase, WatchResult } from "./CounterBase";
+import Timeout = NodeJS.Timeout;
+import { IInfoData, IInfoDescription, LogFunction, NanoTs } from "../types";
+import { CounterBase, PollResult } from "./CounterBase";
 /**
  * This counter attempts to mimic NewRelic's "CPU time per tick" metric.
  *
@@ -20,9 +21,15 @@ declare class NrCounter extends CounterBase {
      * The current setImmediate() result.
      */
     protected immediateTimer?: Immediate;
-    protected latestCounterUsage: CpuUsage;
-    protected latestWatchUsage: CpuUsage;
-    protected cpuMsecMax: number;
+    /**
+     * The current setTimeout() result.
+     */
+    protected nrTimer?: Timeout;
+    protected cpuPerTickMax: number;
+    protected tickLagMax: number;
+    protected latestPollUsage: CpuUsage;
+    protected latestTickTimerUsage: CpuUsage;
+    protected latestTickTimerNanoTS: NanoTs;
     /**
      * The latest tick count.
      */
@@ -37,10 +44,15 @@ declare class NrCounter extends CounterBase {
      *
      * This method is only public for tests: it is not meant for external use.
      *
-     * @return {number}
-     *   max(cpuMsecPerTick) since last call to counterReset().
+     * @return
+     *   - max(cpuMsecPerTick)
+     *   - max(abs(clockMsecLag))
+     *   Both since last call to counterReset().
      */
-    counterReset(): number;
+    counterReset(): {
+        cpuPerTickMax: number;
+        tickLagMax: number;
+    };
     /**
      * @inheritDoc
      */
@@ -49,6 +61,12 @@ declare class NrCounter extends CounterBase {
      * @inheritDoc
      */
     getLastPoll(): IInfoData;
+    /**
+     * @inheritDoc
+     *
+     * This method is only public for tests: it is not meant for external use.
+     */
+    poll(): PollResult;
     /**
      * Start the metric collection.
      *
@@ -61,17 +79,24 @@ declare class NrCounter extends CounterBase {
      */
     stop(): void;
     /**
-     * @inheritDoc
-     */
-    protected watch(): WatchResult;
-    /**
+     * Force the event loop not to idle-wait and go back to the timer step.
+     *
+     * This is the main reason why this technique is costly, but accurate, as it
+     * prevents NodeJS from doing the cost-reducing optimization in the "poll"
+     * phase of the event loop.
+     *
      * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
      *
      * @see https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args
      *
      * "When delay is [...] less than 1, the delay will be set to 1."
      */
-    protected counterImmediate(): NodeJS.Timeout;
-    protected counterTimer(): void;
+    protected tickImmediate(): NodeJS.Timeout;
+    /**
+     * Update the maximum loop lag and CPU usage during the last tick.
+     *
+     * @see poll
+     */
+    protected tickTimer(): void;
 }
 export { NrCounter, };

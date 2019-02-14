@@ -1,8 +1,8 @@
 import {
-  ISessionInfoData,
   INamedSessions,
-  SessionInfo,
+  ISessionInfoData,
   ISubscription,
+  SessionInfo,
 } from "../../src/SessionInfo";
 import {IInfoDescription, NanoTs} from "../../src/types";
 
@@ -140,12 +140,16 @@ function testSessionInfo() {
     const info: ISessionInfoData = collector.getInfo();
     const users = info.usersWithNSubscriptions;
     // Object.keys() return object keys as strings so use Map to have numeric keys.
+    // @ts-ignore
     const expectations = new Map([
       [2, 1], // sess1: sub0, 1.
       [4, 1], // sess2: sub1, 2, 3, 4.
     ]);
+    // @ts-ignore
     const actualKeys = Array.from(users.keys()).sort();
+    // @ts-ignore
     expect(actualKeys).toEqual(Array.from(expectations.keys()).sort());
+    // @ts-ignore
     users.forEach((v: number | NanoTs, k: number | string) => {
       expect(typeof k === "number").toBe(true);
       expect(v).toBe(expectations.get(k as number));

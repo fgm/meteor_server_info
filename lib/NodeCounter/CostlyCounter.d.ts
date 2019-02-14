@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import Immediate = NodeJS.Immediate;
 import { IInfoDescription, LogFunction } from "../types";
-import { CounterBase, WatchResult } from "./CounterBase";
+import { CounterBase, PollResult } from "./CounterBase";
 /**
  * This counter actually counts ticks by jumping to and fro the loop phases.
  *
@@ -46,7 +46,7 @@ declare class CostlyCounter extends CounterBase {
     /**
      * @inheritDoc
      */
-    protected watch(): WatchResult;
+    protected poll(): PollResult;
     /**
      * Notice: setTimeout(cb, 0) actually means setTimeout(cb, 1).
      *

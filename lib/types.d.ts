@@ -1,4 +1,8 @@
 /**
+ * The type for a Jest "done" test argument.
+ */
+declare type IDone = () => void;
+/**
  * The type for functions compatible with "console.log(sprintf("
  */
 declare type LogFunction = (format: string, ...args: any[]) => void;
@@ -52,7 +56,7 @@ interface IInfoSection {
     getDescription: () => IInfoDescription;
 }
 /**
- * The result of a watch() iteration: a previous/current pair of nanotimestamps.
+ * The result of a poll() iteration: a previous/current pair of nanotimestamps.
  *
  * It can only represent positive durations.
  *
@@ -61,6 +65,10 @@ interface IInfoSection {
 declare class NanoTs {
     seconds: number;
     nanosec: number;
+    /**
+     * Construct a NanoTS for the current high-resolution time.
+     */
+    static forNow(): NanoTs;
     /**
      * Ensures normalize values: only positive integers, nanosec < 1E9.
      *
@@ -84,5 +92,5 @@ declare class NanoTs {
      */
     toMsec(): number;
 }
-export { Counter, IInfoData, IInfoSection, IInfoDescription, NanoTs, nullLogger, timingLog, };
+export { Counter, IDone, IInfoData, IInfoSection, IInfoDescription, NanoTs, nullLogger, timingLog, };
 export { LogFunction };
