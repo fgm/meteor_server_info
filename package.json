@@ -10,25 +10,26 @@
   },
   "description": "A NPM version of the Atmosphere percolate:meteor_server_info package.",
   "dependencies": {
+    "gc-stats": "^1.2.1",
     "sprintf-js": "^1.1.2"
   },
   "//": "sprintf-js is only used by doc/algorithms.js",
   "devDependencies": {
-    "@types/jest": "^24.0.4",
-    "@types/lodash": "^4.14.121",
-    "@types/meteor": "^1.4.26",
-    "@types/node": "^11.9.3",
+    "@types/jest": "^24.0.11",
+    "@types/lodash": "^4.14.123",
+    "@types/meteor": "^1.4.27",
+    "@types/node": "^11.13.4",
     "@types/sprintf-js": "^1.1.2",
-    "codecov": "^3.2.0",
+    "codecov": "^3.3.0",
     "growl": "^1.10.5",
     "ink-docstrap": "^1.3.2",
-    "jest": "^24.1.0",
-    "npm": "^6.8.0",
-    "ts-jest": "^23.10.5",
-    "tslint": "^5.12.0",
+    "jest": "^24.7.1",
+    "npm": "^6.9.0",
+    "ts-jest": "^24.0.2",
+    "tslint": "^5.15.0",
     "typedoc": "^0.14.2",
-    "typescript": "^3.3.3",
-    "yarn": "^1.13.0"
+    "typescript": "^3.4.3",
+    "yarn": "^1.15.2"
   },
   "engineStrict": true,
   "engines": {
@@ -69,5 +70,5 @@
     "ts-lint-tests": "tslint __tests__/**/*"
   },
   "typings": "lib/index.d.ts",
-  "version": "1.2.2"
+  "version": "1.2.3"
 }

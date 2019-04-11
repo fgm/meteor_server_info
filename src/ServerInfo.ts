@@ -19,6 +19,7 @@ import {
   CounterFactory,
   CounterType,
 } from "./NodeCounter/CounterFactory";
+import {NodeGcInfo} from "./NodeGcInfo";
 import {NodeInfo} from "./NodeInfo";
 import {SessionInfo} from "./SessionInfo";
 import {SocketInfo} from "./SocketInfo";
@@ -109,6 +110,7 @@ class ServerInfo {
       ? CounterFactory.create(this.settings.eventLoopStrategy, log)
       : undefined;
     this.sections = {
+      gc:       new NodeGcInfo(),
       mongo:    new MongoInfo(this.mongoInternals),
       process:  new NodeInfo(process, counter),
       sessions: new SessionInfo(this.meteor.default_server.sessions),
