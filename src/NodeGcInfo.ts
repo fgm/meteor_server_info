@@ -24,6 +24,19 @@ type GcTypeId = 1 | 2 | 4 | 8;
  * Class GcObserver is the type supporting GC observation via gc-stats.
  */
 class GcObserver {
+  protected prevCurrentMinute: number = 0.0;
+  protected prevMsecMax: number = 0.0;
+
+  protected prevCallsScavenger: number = 0;
+  protected prevCallsMSC: number = 0;
+  protected prevCallsIncremental: number = 0;
+  protected prevCallsWeakPhantom: number = 0;
+
+  protected prevMsecScavenger: number = 0.0;
+  protected prevMsecMSC: number = 0.0;
+  protected prevMsecIncremental: number = 0.0;
+  protected prevMsecWeakPhantom: number = 0.0;
+
   protected currentMinute: number = 0.0;
   protected msecMax: number = 0.0;
 
@@ -38,6 +51,36 @@ class GcObserver {
   protected msecWeakPhantom: number = 0.0;
 
   public getInfo(): INodeGcInfoData {
+    const calls = this.prevCallsScavenger +
+      this.prevCallsMSC +
+      this.prevCallsIncremental +
+      this.prevCallsWeakPhantom;
+    const msec = this.prevMsecScavenger +
+      this.prevMsecMSC +
+      this.prevMsecIncremental +
+      this.prevMsecWeakPhantom;
+
+    const info: INodeGcInfoData = {
+      currentMinute: this.prevCurrentMinute,
+      msecPerGcAvg: (calls !== 0) ? msec / calls : 0,
+      msecPerGcMax: this.prevMsecMax,
+      msecTotal: msec,
+
+      callsIncrementalMarking: this.prevCallsIncremental,
+      callsMarkSweepCompactor: this.prevCallsMSC,
+      callsScavenger: this.prevCallsScavenger,
+      callsWeakPhantomCallbacks: this.prevCallsWeakPhantom,
+
+      msecIncrementalMarking: Math.round(this.prevMsecIncremental),
+      msecMarkSweepCompactor: Math.round(this.prevMsecMSC),
+      msecScavenger: Math.round(this.prevMsecScavenger),
+      msecWeakPhantomCallbacks: Math.round(this.prevMsecWeakPhantom),
+    };
+
+    return info;
+  }
+
+  public getRunningInfo(): INodeGcInfoData {
     const calls = this.callsScavenger +
       this.callsMSC +
       this.callsIncremental +
@@ -89,6 +132,19 @@ class GcObserver {
   }
 
   protected init(): void {
+    this.prevCurrentMinute = this.currentMinute;
+    this.prevMsecMax = this.msecMax;
+
+    this.prevCallsScavenger = this.callsScavenger;
+    this.prevCallsMSC = this.callsMSC;
+    this.prevCallsIncremental = this.callsIncremental;
+    this.prevCallsWeakPhantom = this.callsWeakPhantom;
+
+    this.prevMsecScavenger = this.msecScavenger;
+    this.prevMsecMSC = this.msecMSC;
+    this.prevMsecIncremental = this.msecIncremental;
+    this.prevMsecWeakPhantom = this.msecWeakPhantom;
+
     this.currentMinute = 0.0;
     this.msecMax = 0.0;
 

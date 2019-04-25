@@ -17,6 +17,16 @@ interface INodeGcInfoData extends IInfoData {
  * Class GcObserver is the type supporting GC observation via gc-stats.
  */
 declare class GcObserver {
+    protected prevCurrentMinute: number;
+    protected prevMsecMax: number;
+    protected prevCallsScavenger: number;
+    protected prevCallsMSC: number;
+    protected prevCallsIncremental: number;
+    protected prevCallsWeakPhantom: number;
+    protected prevMsecScavenger: number;
+    protected prevMsecMSC: number;
+    protected prevMsecIncremental: number;
+    protected prevMsecWeakPhantom: number;
     protected currentMinute: number;
     protected msecMax: number;
     protected callsScavenger: number;
@@ -28,6 +38,7 @@ declare class GcObserver {
     protected msecIncremental: number;
     protected msecWeakPhantom: number;
     getInfo(): INodeGcInfoData;
+    getRunningInfo(): INodeGcInfoData;
     start(): void;
     stop(): void;
     /**
