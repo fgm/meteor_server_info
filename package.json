@@ -10,7 +10,7 @@
   },
   "description": "A NPM version of the Atmosphere percolate:meteor_server_info package.",
   "dependencies": {
-    "gc-stats": "^1.2.1",
+    "gc-stats": "dainis/node-gcstats#master",
     "sprintf-js": "^1.1.2"
   },
   "//": "sprintf-js is only used by doc/algorithms.js",

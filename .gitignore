@@ -3,6 +3,7 @@ __tests__/unit/*.js
 node_modules/
 /coverage
 out/
+nr-log-debug.txt
 package-lock.json
 random
 yarn.lock

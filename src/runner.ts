@@ -8,6 +8,7 @@ import {CostlyCounter} from "./NodeCounter/CostlyCounter";
 import {CounterBase} from "./NodeCounter/CounterBase";
 import {NrCounter} from "./NodeCounter/NrCounter";
 import {LogFunction, timingLog} from "./types";
+import ErrnoException = NodeJS.ErrnoException;
 
 // ---- Tools ------------------------------------------------------------------
 
@@ -36,7 +37,7 @@ function read(file = "random") {
   // This part is supposed to be performed by a background thread so it should not impact the loop (but it does).
   // TODO remove the cast after https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30471
   const t0 = (hrtime as any).bigint();
-  fs.readFile(file, (err: Error, res: Uint8Array) => {
+  fs.readFile(file, (err: ErrnoException | null, res: Uint8Array) => {
     if (err) {
       throw err;
     }
