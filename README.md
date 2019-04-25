@@ -122,6 +122,14 @@ with lower metric acquisition cost, a binary agent is required: AppDynamics,
 Dynatrace, NewRelic and others offer this type of solution, the tradeoff in
 that case being CPU cost vs monthly SaaS cost.
 
+### Known issues
+
+With Meteor 1.8.1:
+
+- the "sessions" metrics are always null
+- the sockets metrics only work in `meteor run` mode
+
+Meteor 1.8.0.1 does not have this issue.
 
 ## License
 
@@ -132,29 +140,32 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 ## Changelog
 
+* 1.2.3
+  * New garbage collector metrics from package [gc-stats](https://github.com/dainis/node-gcstats).
+  * TypeScript 3.4.
 * 1.2.2
   * New tickLagMax in NrCounter. Other metrics renamed and reworded for intelligibility.
-  * TypeScript 3.3
+  * TypeScript 3.3.
   * Over 70% new test coverage for NrCounter and CounterBase.
 * 1.2.1
   * Node.JS EventLoop and CPU metrics, 3 strategies at different accuracy and cost levels
-  * TypeScript 3.2
+  * TypeScript 3.2.
   * Documentation converted from Jsdoc to Typedoc.
   * 100% test coverage of NodeInfo and SessionInfo.
 * 1.2.0
   * Converted to TypeScript 3, with increased coverage
   * Compatibility with Meteor 1.7 and 1.8.
 * 1.1.2
-  * updated documentation
-  * Travis CI tests
+  * updated documentation.
+  * Travis CI tests.
   * CodeCov coverage analysis.
 * 1.1.1
-  * include RAM / CPU metrics
+  * include RAM / CPU metrics.
 * 1.0.1
   * added an explicit dev dependency on marked 0.3.9 to work around
     https://github.com/jsdoc3/jsdoc/issues/1489 - can be removed once jsdoc
     updates its dependency to that level.
-  * updated JsDoc to 3.5.5
+  * updated JsDoc to 3.5.5.
   * fixed JsDoc configuration so that npm run doc actually works
 * 1.0.0: initial version
   * For Meteor 1.6.x
