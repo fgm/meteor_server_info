@@ -55,6 +55,9 @@ interface IInfoSection {
      */
     getDescription: () => IInfoDescription;
 }
+interface IAnyByString {
+    [key: string]: any;
+}
 /**
  * The result of a poll() iteration: a previous/current pair of nanotimestamps.
  *
@@ -92,5 +95,5 @@ declare class NanoTs {
      */
     toMsec(): number;
 }
-export { Counter, IDone, IInfoData, IInfoSection, IInfoDescription, NanoTs, nullLogger, timingLog, };
+export { Counter, IDone, IAnyByString, IInfoData, IInfoSection, IInfoDescription, NanoTs, nullLogger, timingLog, };
 export { LogFunction };

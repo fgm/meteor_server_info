@@ -1,4 +1,10 @@
-import {Counter, IInfoData, IInfoDescription, IInfoSection} from "./types";
+import {
+  Counter,
+  IAnyByString,
+  IInfoData,
+  IInfoDescription,
+  IInfoSection
+} from "./types";
 
 interface ISessionInfoData extends IInfoData {
   nDocuments: Counter,
@@ -47,7 +53,7 @@ class SessionInfo implements IInfoSection {
    *
    * @constructor
    */
-  constructor(protected sessions: INamedSessions) {
+  constructor(protected sessions: INamedSessions | Map<string,any>) {
     this.info = this.defaultInfo();
   }
 
@@ -88,13 +94,33 @@ class SessionInfo implements IInfoSection {
    */
   public getInfo(): ISessionInfoData {
     this.info = this.defaultInfo();
-    this.info.nSessions = Object.keys(this.sessions).length;
-    for (let session of Object.values(this.sessions)) {
-      session = {
-        _namedSubs: session._namedSubs,
-        id: session.id,
-      };
-      this.addPerSessionInfo(Object.values(session._namedSubs));
+
+    // New format required starting with Meteor 1.8.1.
+    if (this.sessions instanceof Map) {
+      this.info.nSessions = this.sessions.size;
+      this.sessions.forEach((s: any, id: string) => {
+        // Convert typed NamedSubs to legacy base objects.
+        const session = {
+          _namedSubs: ((subs: Map<string,IAnyByString>) => {
+            const r: IAnyByString = {};
+            for (let [k, v] of subs) {
+              r[k]  = v;
+            }
+            return r;
+          })(s._namedSubs as Map<string, any>),
+          id,
+        };
+        this.addPerSessionInfo(Object.values(session._namedSubs));
+      });
+    } else {
+      this.info.nSessions = Object.keys(this.sessions).length;
+      for (let session of Object.values(this.sessions)) {
+        session = {
+          _namedSubs: session._namedSubs,
+          id: session.id,
+        };
+        this.addPerSessionInfo(Object.values(session._namedSubs));
+      }
     }
 
     return this.info;

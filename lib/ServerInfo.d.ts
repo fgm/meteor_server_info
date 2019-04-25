@@ -12,7 +12,7 @@ interface IFacts {
     };
 }
 interface IMeteor {
-    default_server: any;
+    server: any;
     settings: {
         [key: string]: any;
     };
@@ -54,7 +54,7 @@ declare class ServerInfo {
      * @param {Facts} facts
      *   The Meteor Facts collector service.
      *
-     * TODO check whether Meteor.default_server might actually change over time.
+     * TODO check whether Meteor.server might actually change over time.
      */
     constructor(meteor: IMeteor, webApp: typeof WebApp, mongoInternals: object, facts: IFacts);
     /**

@@ -40,7 +40,7 @@ interface IFacts {
 }
 
 interface IMeteor {
-  default_server: any,
+  server: any,
   settings: {
     [key: string]: any,
   },
@@ -93,7 +93,7 @@ class ServerInfo {
    * @param {Facts} facts
    *   The Meteor Facts collector service.
    *
-   * TODO check whether Meteor.default_server might actually change over time.
+   * TODO check whether Meteor.server might actually change over time.
    */
   constructor(
     // We only use the Meteor default_server key, but we keep the whole Meteor
@@ -113,8 +113,8 @@ class ServerInfo {
       gc:       new NodeGcInfo(),
       mongo:    new MongoInfo(this.mongoInternals),
       process:  new NodeInfo(process, counter),
-      sessions: new SessionInfo(this.meteor.default_server.sessions),
-      sockets:  new SocketInfo(this.meteor.default_server.stream_server.open_sockets),
+      sessions: new SessionInfo(this.meteor.server.sessions),
+      sockets:  new SocketInfo(this.meteor.server.stream_server.open_sockets),
     };
   }
 

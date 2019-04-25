@@ -30,7 +30,7 @@ interface ISubscriptionDocuments {
  * Provides the session-related information: sessions, subscriptions, documents.
  */
 declare class SessionInfo implements IInfoSection {
-    protected sessions: INamedSessions;
+    protected sessions: INamedSessions | Map<string, any>;
     protected info: ISessionInfoData;
     /**
      * @param sessions
@@ -38,7 +38,7 @@ declare class SessionInfo implements IInfoSection {
      *
      * @constructor
      */
-    constructor(sessions: INamedSessions);
+    constructor(sessions: INamedSessions | Map<string, any>);
     /**
      * Describe the metrics provided by this service.
      */
