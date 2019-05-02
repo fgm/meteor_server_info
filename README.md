@@ -132,6 +132,9 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 ## Changelog
 
+* 1.2.5
+  * Native event loop metrics from package [event-loop-stats](https://github.com/bripkens/event-loop-stats)
+    as a more efficient alternative to the userland Counter classes.
 * 1.2.4
   * Same as 1.2.3, but also working on Meteor 1.8.1
   * Session info are no longer null on Meteor 1.8.1

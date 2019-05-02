@@ -2,6 +2,7 @@ import {createHash} from "crypto";
 import fs from "fs";
 
 import {argv, argv0, exit, hrtime, pid} from "process";
+import { sense } from "event-loop-stats";
 
 import {CheapCounter} from "./NodeCounter/CheapCounter";
 import {CostlyCounter} from "./NodeCounter/CostlyCounter";
@@ -117,7 +118,15 @@ switch (type) {
     setInterval(() => {
       log("Max CPU time per tick: %6.2f", counter.counterReset());
     }, 2000);
+    break;
 
+  case 3:
+    log("Testing with event-loop-stats");
+    sense();
+    setInterval(() => null, 199);
+    setInterval(() => console.log(sense()), 1000);
+    setTimeout(read, 3000);
+    break;
 }
 
 setTimeout(() => {
@@ -127,4 +136,4 @@ setTimeout(() => {
 
 export {
   milliwait,
-  };
+};
