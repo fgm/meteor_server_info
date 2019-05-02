@@ -3,7 +3,7 @@ import {
   IAnyByString,
   IInfoData,
   IInfoDescription,
-  IInfoSection
+  IInfoSection,
 } from "./types";
 
 interface ISessionInfoData extends IInfoData {
@@ -53,7 +53,7 @@ class SessionInfo implements IInfoSection {
    *
    * @constructor
    */
-  constructor(protected sessions: INamedSessions | Map<string,any>) {
+  constructor(protected sessions: INamedSessions | Map<string, ISession>) {
     this.info = this.defaultInfo();
   }
 
@@ -101,9 +101,9 @@ class SessionInfo implements IInfoSection {
       this.sessions.forEach((s: any, id: string) => {
         // Convert typed NamedSubs to legacy base objects.
         const session = {
-          _namedSubs: ((subs: Map<string,IAnyByString>) => {
+          _namedSubs: ((subs: Map<string, IAnyByString>) => {
             const r: IAnyByString = {};
-            for (let [k, v] of subs) {
+            for (const [k, v] of subs) {
               r[k]  = v;
             }
             return r;
@@ -213,6 +213,7 @@ class SessionInfo implements IInfoSection {
 }
 
 export {
+  ISession,
   ISessionInfoData,
   SessionInfo,
 

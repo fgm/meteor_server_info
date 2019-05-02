@@ -24,7 +24,7 @@ class MockCounter implements ICounter {
   }
   public start(): Timeout {
     this.started = true;
-    const timeout = setTimeout(() => {}, 0);
+    const timeout = setTimeout(() => ({}), 0);
     clearTimeout(timeout);
     return timeout;
   }
