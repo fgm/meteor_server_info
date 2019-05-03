@@ -1,3 +1,5 @@
+import Timeout = NodeJS.Timeout;
+
 import {
   IInfoData,
   IInfoDescription,
@@ -6,7 +8,6 @@ import {
   NanoTs,
   nullLogger,
 } from "../types";
-import Timeout = NodeJS.Timeout;
 
 // TODO: convert to [bigint, bigint] after Meteor (1.9 ?) switches to NodeJS >= 10.7.
 type PollResult = [NanoTs, NanoTs];

@@ -1,15 +1,21 @@
+import Timeout = NodeJS.Timeout;
+
 import {IEventStats, sense} from "event-loop-stats";
 
 import {IInfoData, IInfoDescription, LogFunction, nullLogger} from "../types";
 import {CounterBase, PollResult} from "./CounterBase";
 
-console.log("sense",  sense);
+// The busterTimer interval.
+const BUSTER_LAP = 100;
 
 /**
  *
  * Based on the native libuv hook usage in event-loop-stats.
  */
 class ElsCounter extends CounterBase {
+
+  // A timer added just to force inactive loops out of inaction.
+  protected busterTimer?: Timeout;
 
   /**
    * @param keep
@@ -28,20 +34,24 @@ class ElsCounter extends CounterBase {
   public getDescription(): IInfoDescription {
     const numberTypeName = "number";
     const description = {
-      maxLoopDelay: {
-        label: "Maximum main loop duration, in msec.",
+      loopDelay: {
+        label: "Estimated current average event main loop duration, in msec.",
         type: numberTypeName,
       },
-      minLoopDelay: {
-        label: "Minimum main loop duration, in msec.",
+      loopDelayCount: {
+        label: "Number of main loop iterations since last fetch, from ELS.",
         type: numberTypeName,
       },
-      numLoopDelay: {
-        label: "Number of main loop iterations.",
+      loopDelayMaxMsec: {
+        label: "Maximum main loop duration, in msec since last fetch, from ELS.",
         type: numberTypeName,
       },
-      sumLoopDelay: {
-        label: "Total main loop delay, in msec.",
+      loopDelayMinMsec: {
+        label: "Minimum main loop duration, in msec since last fetch, from ELS.",
+        type: numberTypeName,
+      },
+      loopDelayTotalMsec: {
+        label: "Total main loop delay, in msec since last fetch, from ELS.",
         type: numberTypeName,
       },
     };
@@ -61,12 +71,33 @@ class ElsCounter extends CounterBase {
    */
   public start(): NodeJS.Timeout {
     const timer = super.start();
+    this.busterTimer = setInterval(this.bustOptimizations.bind(this), BUSTER_LAP);
     if (!this.keep) {
       // Don't keep the event loop running just for us.
       timer.unref();
+      this.busterTimer.unref();
     }
+
     return timer;
   }
+
+  /**
+   * Stop metrics collection. Idempotent, won't error.
+   */
+  public stop() {
+    if (typeof this.busterTimer !== "undefined") {
+      clearTimeout(this.busterTimer);
+      this.busterTimer = undefined;
+    }
+    super.stop();
+  }
+
+  /**
+   * Do nothing, but exist just to force the event loop to work.
+   *
+   * @see ElsCounter.start()
+   */
+  protected bustOptimizations() {}
 
   /**
    * @inheritDoc
@@ -86,8 +117,11 @@ class ElsCounter extends CounterBase {
     );
 
     this.setLastPoll({
-      loopDelay: actualLapNanoTs,
-      ...sensed,
+      loopDelay:          actualLapNanoTs,
+      loopDelayCount:     sensed.num,
+      loopDelayMaxMsec:   sensed.max,
+      loopDelayMinMsec:   sensed.min,
+      loopDelayTotalMsec: sensed.sum,
     });
 
     return [prev, nsec];

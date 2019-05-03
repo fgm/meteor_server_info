@@ -1,6 +1,6 @@
 /// <reference types="node" />
-import { IInfoData, IInfoDescription, IInfoSection, LogFunction, NanoTs } from "../types";
 import Timeout = NodeJS.Timeout;
+import { IInfoData, IInfoDescription, IInfoSection, LogFunction, NanoTs } from "../types";
 declare type PollResult = [NanoTs, NanoTs];
 interface ICounter {
     /**
