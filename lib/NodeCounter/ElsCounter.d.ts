@@ -10,6 +10,10 @@ declare class ElsCounter extends CounterBase {
     protected keep: boolean;
     protected busterTimer?: Timeout;
     /**
+     * Maintained separately from regular polls to be reset on read.
+     */
+    protected tickLagMax: number;
+    /**
      * @param keep
      *   Keep the event loop running even if only this counter remains.
      * @param log
@@ -17,13 +21,26 @@ declare class ElsCounter extends CounterBase {
      */
     constructor(keep?: boolean, log?: LogFunction);
     /**
+     * Resetting tickLagMax and return its value.
+     *
+     * This method is only public for tests: it is not meant for external use.
+     *
+     * @return
+     *   - max(cpuMsecPerTick)
+     *   - max(abs(clockMsecLag))
+     *   Both since last call to counterReset().
+     */
+    counterReset(): {
+        tickLagMax: number;
+    };
+    /**
      * @inheritDoc
      */
     getDescription(): IInfoDescription;
     /**
      * @inheritDoc
      */
-    getInfo(): IInfoData;
+    getLastPoll(): IInfoData;
     /**
      * @inheritDoc
      */
@@ -32,12 +49,6 @@ declare class ElsCounter extends CounterBase {
      * Stop metrics collection. Idempotent, won't error.
      */
     stop(): void;
-    /**
-     * Do nothing, but exist just to force the event loop to work.
-     *
-     * @see ElsCounter.start()
-     */
-    protected bustOptimizations(): void;
     /**
      * @inheritDoc
      */

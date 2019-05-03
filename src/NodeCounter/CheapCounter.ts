@@ -1,4 +1,10 @@
-import {IInfoData, IInfoDescription, LogFunction, nullLogger} from "../types";
+import {
+  IInfoData,
+  IInfoDescription,
+  LogFunction,
+  NanoTs,
+  nullLogger,
+} from "../types";
 import {CounterBase, PollResult} from "./CounterBase";
 
 /**
@@ -44,7 +50,10 @@ class CheapCounter extends CounterBase {
    * @inheritDoc
    */
   public getInfo(): IInfoData {
-    return this.getLastPoll();
+    const polled = this.getLastPoll();
+    // The value in .seconds is known to be a small int.
+    polled.loopDelay = (polled.loopDelay as NanoTs).seconds + (polled.loopDelay as NanoTs).nanosec / 1E9;
+    return polled;
   }
 
   /**
@@ -56,6 +65,7 @@ class CheapCounter extends CounterBase {
       // Don't keep the event loop running just for us.
       timer.unref();
     }
+
     return timer;
   }
 

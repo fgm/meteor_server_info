@@ -14,7 +14,7 @@ import {WebApp} from "meteor/webapp";
 
 // Module imports.
 import {MongoInfo} from "./MongoInfo";
-import {ICounter} from "./NodeCounter/CounterBase";
+import {CounterBase} from "./NodeCounter/CounterBase";
 import {
   CounterFactory,
   CounterType,
@@ -106,14 +106,13 @@ class ServerInfo {
     this.settings = meteor.settings.serverInfo as IServerInfoSettings || defaultSettings;
     this.connectHandlers = webApp.connectHandlers;
     const log: LogFunction = this.settings.verbose ? timingLog : nullLogger;
-    const counter: ICounter | undefined = (typeof this.settings.eventLoopStrategy === "string")
+    const counter: CounterBase | undefined = (typeof this.settings.eventLoopStrategy === "string")
       ? CounterFactory.create(this.settings.eventLoopStrategy, log)
       : undefined;
     this.sections = {
       gc:          new NodeGcInfo(),
       mongo:       new MongoInfo(this.mongoInternals),
       process:     new NodeInfo(process, counter),
-      process_els: new NodeInfo(process, CounterFactory.create("els", log)),
       sessions:    new SessionInfo(this.meteor.server.sessions),
       sockets:     new SocketInfo(this.meteor.server.stream_server.open_sockets),
     };

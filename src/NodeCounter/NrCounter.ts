@@ -35,10 +35,14 @@ class NrCounter extends CounterBase {
   protected nrTimer?: Timeout;
 
   protected cpuPerTickMax: number = 0;
-  protected tickLagMax: number = 0;
   protected latestPollUsage: CpuUsage;
   protected latestTickTimerUsage: CpuUsage;
   protected latestTickTimerNanoTS: NanoTs;
+
+  /**
+   * Maintained separately from regular polls to be reset on read.
+   */
+  protected tickLagMax: number = 0;
 
   /**
    * The latest tick count.

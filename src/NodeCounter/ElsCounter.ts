@@ -2,7 +2,13 @@ import Timeout = NodeJS.Timeout;
 
 import {IEventStats, sense} from "event-loop-stats";
 
-import {IInfoData, IInfoDescription, LogFunction, nullLogger} from "../types";
+import {
+  IInfoData,
+  IInfoDescription,
+  LogFunction,
+  NanoTs,
+  nullLogger,
+} from "../types";
 import {CounterBase, PollResult} from "./CounterBase";
 
 // The busterTimer interval.
@@ -18,6 +24,11 @@ class ElsCounter extends CounterBase {
   protected busterTimer?: Timeout;
 
   /**
+   * Maintained separately from regular polls to be reset on read.
+   */
+  protected tickLagMax: number = 0;
+
+  /**
    * @param keep
    *   Keep the event loop running even if only this counter remains.
    * @param log
@@ -29,29 +40,51 @@ class ElsCounter extends CounterBase {
   }
 
   /**
+   * Resetting tickLagMax and return its value.
+   *
+   * This method is only public for tests: it is not meant for external use.
+   *
+   * @return
+   *   - max(cpuMsecPerTick)
+   *   - max(abs(clockMsecLag))
+   *   Both since last call to counterReset().
+   */
+  public counterReset() {
+    const max = {
+      tickLagMax: this.tickLagMax,
+    };
+    this.tickLagMax = 0;
+    return max;
+  }
+
+  /**
    * @inheritDoc
    */
   public getDescription(): IInfoDescription {
     const numberTypeName = "number";
     const description = {
+      loopCount: {
+        label: "Number of main loop iterations during last sensing, from ELS.",
+        type: numberTypeName,
+      },
       loopDelay: {
         label: "Estimated current average event main loop duration, in msec.",
         type: numberTypeName,
       },
-      loopDelayCount: {
-        label: "Number of main loop iterations since last fetch, from ELS.",
-        type: numberTypeName,
-      },
       loopDelayMaxMsec: {
-        label: "Maximum main loop duration, in msec since last fetch, from ELS.",
+        label: "Maximum main loop duration, in msec during last sensing, from ELS.",
         type: numberTypeName,
       },
       loopDelayMinMsec: {
-        label: "Minimum main loop duration, in msec since last fetch, from ELS.",
+        label: "Minimum main loop duration, in msec during last sensing, from ELS.",
         type: numberTypeName,
       },
       loopDelayTotalMsec: {
-        label: "Total main loop delay, in msec since last fetch, from ELS.",
+        label: "Total main loop delay, in msec during last sensing, from ELS.",
+        type: numberTypeName,
+      },
+      tickLagMax: {
+        label: "Maximum tick duration deviation from 1 msec (in msec) since last fetch, not last sensing.",
         type: numberTypeName,
       },
     };
@@ -62,8 +95,22 @@ class ElsCounter extends CounterBase {
   /**
    * @inheritDoc
    */
-  public getInfo(): IInfoData {
-    return this.getLastPoll();
+  public getLastPoll(): IInfoData {
+    const poll: IInfoData = {
+      ...this.lastPoll,
+      // Max values are collected in real time, not by polling.
+      ...this.counterReset(),
+    };
+
+    // The value in .seconds is known to be a small int.
+    poll.loopDelay = (poll.loopDelay as NanoTs).seconds + (poll.loopDelay as NanoTs).nanosec / 1E9;
+
+    const keys = Object.keys(poll).sort();
+    const res: IInfoData = {};
+    for (const key of keys) {
+      res[key] = poll[key];
+    }
+    return res;
   }
 
   /**
@@ -71,7 +118,7 @@ class ElsCounter extends CounterBase {
    */
   public start(): NodeJS.Timeout {
     const timer = super.start();
-    this.busterTimer = setInterval(this.bustOptimizations.bind(this), BUSTER_LAP);
+    this.busterTimer = setInterval(() => (null), BUSTER_LAP);
     if (!this.keep) {
       // Don't keep the event loop running just for us.
       timer.unref();
@@ -93,13 +140,6 @@ class ElsCounter extends CounterBase {
   }
 
   /**
-   * Do nothing, but exist just to force the event loop to work.
-   *
-   * @see ElsCounter.start()
-   */
-  protected bustOptimizations() {}
-
-  /**
    * @inheritDoc
    */
   protected poll(): PollResult {
@@ -117,12 +157,18 @@ class ElsCounter extends CounterBase {
     );
 
     this.setLastPoll({
+      loopCount:          sensed.num,
       loopDelay:          actualLapNanoTs,
-      loopDelayCount:     sensed.num,
       loopDelayMaxMsec:   sensed.max,
       loopDelayMinMsec:   sensed.min,
       loopDelayTotalMsec: sensed.sum,
     });
+
+    // Note that sensed.max is a duration, defaulting to 1. Lag is the
+    // difference from that nominal deviation, so it has to be deducted.
+    if (sensed.max - 1 > this.tickLagMax) {
+      this.tickLagMax = sensed.max - 1;
+    }
 
     return [prev, nsec];
   }
