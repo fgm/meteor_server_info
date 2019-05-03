@@ -95,15 +95,12 @@ class ElsCounter extends CounterBase {
   /**
    * @inheritDoc
    */
-  public getLastPoll(): IInfoData {
+  public getInfo(): IInfoData {
     const poll: IInfoData = {
-      ...this.lastPoll,
+      ...this.getLastPoll(),
       // Max values are collected in real time, not by polling.
       ...this.counterReset(),
     };
-
-    // The value in .seconds is known to be a small int.
-    poll.loopDelay = (poll.loopDelay as NanoTs).seconds + (poll.loopDelay as NanoTs).nanosec / 1E9;
 
     const keys = Object.keys(poll).sort();
     const res: IInfoData = {};
@@ -114,9 +111,30 @@ class ElsCounter extends CounterBase {
   }
 
   /**
+   * Retrieve the latest sampled results.
+   *
+   * MAY reset some information: see NrCounter for an example.
+   */
+  public getLastPoll(): IInfoData {
+    const poll = this.lastPoll;
+
+    // The value in .seconds is known to be a small int.
+    poll.loopDelay = (poll.loopDelay as NanoTs).seconds + (poll.loopDelay as NanoTs).nanosec / 1E9;
+    return poll;
+  }
+
+  /**
    * @inheritDoc
    */
   public start(): NodeJS.Timeout {
+    this.setLastPoll({
+      loopCount:          0,
+      loopDelay:          new NanoTs(0, 0),
+      loopDelayMaxMsec:   0,
+      loopDelayMinMsec:   0,
+      loopDelayTotalMsec: 0,
+    });
+
     const timer = super.start();
     this.busterTimer = setInterval(() => (null), BUSTER_LAP);
     if (!this.keep) {

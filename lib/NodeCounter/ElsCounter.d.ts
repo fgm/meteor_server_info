@@ -40,6 +40,12 @@ declare class ElsCounter extends CounterBase {
     /**
      * @inheritDoc
      */
+    getInfo(): IInfoData;
+    /**
+     * Retrieve the latest sampled results.
+     *
+     * MAY reset some information: see NrCounter for an example.
+     */
     getLastPoll(): IInfoData;
     /**
      * @inheritDoc

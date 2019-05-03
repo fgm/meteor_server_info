@@ -60,6 +60,10 @@ class CheapCounter extends CounterBase {
    * @inheritDoc
    */
   public start(): NodeJS.Timeout {
+    this.setLastPoll({
+      loopDelay: new NanoTs(0, 0),
+    });
+
     const timer = super.start();
     if (!this.keep) {
       // Don't keep the event loop running just for us.
