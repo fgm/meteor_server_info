@@ -1,36 +1,7 @@
 /// <reference types="node" />
-import { IInfoData, IInfoDescription, IInfoSection, LogFunction, NanoTs } from "../types";
 import Timeout = NodeJS.Timeout;
+import { IInfoData, IInfoDescription, IInfoSection, LogFunction, NanoTs } from "../types";
 declare type PollResult = [NanoTs, NanoTs];
-interface ICounter {
-    /**
-     * Retrieve the latest sampled results.
-     *
-     * MAY reset some information: see NrCounter for an example.
-     */
-    getLastPoll(): IInfoData;
-    /**
-     * Store the latest sampled results.
-     *
-     * @param info
-     *   The latest sampled results.
-     *
-     * This method is only meant for internal or test use.
-     */
-    setLastPoll(info: IInfoData): void;
-    /**
-     * Describe the contents returned by getLastPoll().
-     */
-    getDescription(): IInfoDescription;
-    /**
-     * Start metric sampling.
-     */
-    start(): Timeout;
-    /**
-     * Stop metric sampling.
-     */
-    stop(): void;
-}
 /**
  * The general logic of counters may imply TWO different looping constructs:
  *
@@ -41,7 +12,7 @@ interface ICounter {
  * CostlyCounter and NrCounter use a separate metrics "loop" made of alternate
  * setTimeout()/setImmediate() jumps running around the NodeJS event loop.
  */
-declare class CounterBase implements ICounter, IInfoSection {
+declare class CounterBase implements IInfoSection {
     protected log: LogFunction;
     /**
      * The latest time measurement, in nanoseconds.
@@ -56,13 +27,23 @@ declare class CounterBase implements ICounter, IInfoSection {
     constructor(log?: LogFunction);
     static readonly LAP: number;
     getInfo(): IInfoData;
+    /**
+     * Describe the contents returned by getLastPoll().
+     */
     getDescription(): IInfoDescription;
     /**
-     * @inheritDoc
+     * Retrieve the latest sampled results.
+     *
+     * MAY reset some information: see NrCounter for an example.
      */
     getLastPoll(): IInfoData;
     /**
-     * @inheritDoc
+     * Store the latest sampled results.
+     *
+     * @param info
+     *   The latest sampled results.
+     *
+     * This method is only meant for internal or test use.
      */
     setLastPoll(info: IInfoData): void;
     /**
@@ -81,4 +62,4 @@ declare class CounterBase implements ICounter, IInfoSection {
      */
     protected poll(): PollResult;
 }
-export { CounterBase, ICounter, PollResult, };
+export { CounterBase, PollResult, };

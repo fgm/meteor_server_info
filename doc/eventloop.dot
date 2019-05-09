@@ -1,0 +1,96 @@
+digraph gccousins {
+  rankdir = RL;
+  node [ shape=none ];
+
+  // GCS dependents.
+  "autho0-instrumentation" -> gcs;
+  "ca-apm-probe" -> gcs;
+  "cluster2" -> gcs;
+  "console-agent" -> gcs;
+  "express-heapinfo" -> gcs;
+  "express-node-metrics" -> gcs;
+  "express-performance-sdk" -> gcs;
+  "hapi-microservice" -> gcs;
+  "pm2-advanced-monit" -> gcs;
+  "process-reporter" -> gcs;
+  "service-runner" -> gcs;
+  "triton-metrics" -> gcs;
+
+  "autho0-instrumentation" -> "blocked";
+  "autho0-instrumentation" -> pidusage;
+  "ca-apm-probe" -> "event-loop-stats";
+  "cluster2" -> "usage";
+  "console-agent" -> "pidusage";
+  "express-heapinfo" -> "node-memwatch";
+  "express-heapinfo" -> "v8-heap-info";
+  "express-node-metrics" -> "event-loop-stats";
+  "express-node-metrics" -> "node-memwatch";
+  "express-node-metrics" -> "pidusage";
+  "express-performance-sdk" -> "memwatch-next";
+  "express-performance-sdk" -> "v8-heap-info";
+  "hapi-microservice" -> "event-loop-lag";
+  "pm2-advanced-monit" -> "memwatch-next";
+  "pm2-advanced-monit" -> "v8-heap-info";
+  "process-reporter" -> "toobusy-js";
+  "service-runner" -> "heapdump";
+  "triton-metrics" -> "event-loop-stats";
+
+  subgraph cluster_good_native {
+    label = "Good, native implementation";
+
+    "event-loop-stats"; /* MIT, very different from the NR NM implementation */
+  }
+
+  subgraph cluster_good_userland {
+    label = "Good, userland implementation";
+
+    "event-loop-lag"; /* Pebble aka Fitbit. */
+    "toobusy-js";
+    "blocked";
+  }
+
+  subgraph cluster_memory_native {
+    label = "Memory usage, native";
+
+    gcs [ label="gc-stats" ];
+    "heapdump";
+    "memwatch-next";
+    "node-memwatch";
+    "v8-heap-info";
+  }
+
+  subgraph cluster_usage_userland {
+    label = "Usage metrics, userland";
+
+    "pidusage"; /* forked from usage */
+  }
+
+  subgraph cluster_usage_native {
+    label = "Usage metrics, native";
+
+    "usage"; /* Arunoda */
+  }
+/*
+  subgraph clusterUnrelated {
+    shape = none;
+    "@atomist/atomist-sdm" -> gcs;
+    "@atomist/lifecycle-automation" -> gcs;
+    "@atomist/sdm-automation" -> gcs;
+    "@promster/metrics" -> gcs;
+    "bugger" -> gcs;
+    "es-scheduled-gc-stats" -> gcs;
+    "express-gcstats" -> gcs;
+    "fusion-plugin-node-performance-emitter" -> gcs;
+    "fuzzy-rotary-phone" -> gcs;
+    "hbu" -> gcs;
+    "inspector/vm" -> gcs;
+    "node-heap-gc-cloudwatch" -> gcs;
+    "node-oom-heapdump" -> gcs;
+    "node-red-contrib-gc" -> gcs;
+    "pmx-gc-stats-sum" -> gcs;
+    "prometheus_plugin-gc-stats" -> gcs;
+    "spm-agent-os" -> "procfs-stats";
+    "spm-agent-nodejs" -> gcs;
+  }
+  */
+}

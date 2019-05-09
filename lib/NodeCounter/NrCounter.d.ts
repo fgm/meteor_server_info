@@ -14,6 +14,10 @@ import { CounterBase, PollResult } from "./CounterBase";
  * - its code is cheap but runs on each tick.
  *
  * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes about 6% CPU load.
+ *
+ * @deprecated As of Meteor 1.2.5, this class is deprecated: ElsCounter provides
+ *   similar results with far less server load. It will be removed in 1.3 at the
+ *   latest.
  */
 declare class NrCounter extends CounterBase {
     protected log: LogFunction;
@@ -26,10 +30,13 @@ declare class NrCounter extends CounterBase {
      */
     protected nrTimer?: Timeout;
     protected cpuPerTickMax: number;
-    protected tickLagMax: number;
     protected latestPollUsage: CpuUsage;
     protected latestTickTimerUsage: CpuUsage;
     protected latestTickTimerNanoTS: NanoTs;
+    /**
+     * Maintained separately from regular polls to be reset on read.
+     */
+    protected tickLagMax: number;
     /**
      * The latest tick count.
      */

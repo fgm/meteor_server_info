@@ -1,3 +1,5 @@
+import Timeout = NodeJS.Timeout;
+
 import {
   IInfoData,
   IInfoDescription,
@@ -6,44 +8,9 @@ import {
   NanoTs,
   nullLogger,
 } from "../types";
-import Timeout = NodeJS.Timeout;
 
 // TODO: convert to [bigint, bigint] after Meteor (1.9 ?) switches to NodeJS >= 10.7.
 type PollResult = [NanoTs, NanoTs];
-
-interface ICounter {
-  /**
-   * Retrieve the latest sampled results.
-   *
-   * MAY reset some information: see NrCounter for an example.
-   */
-  getLastPoll(): IInfoData;
-
-  /**
-   * Store the latest sampled results.
-   *
-   * @param info
-   *   The latest sampled results.
-   *
-   * This method is only meant for internal or test use.
-   */
-  setLastPoll(info: IInfoData): void;
-
-  /**
-   * Describe the contents returned by getLastPoll().
-   */
-  getDescription(): IInfoDescription;
-
-  /**
-   * Start metric sampling.
-   */
-  start(): Timeout;
-
-  /**
-   * Stop metric sampling.
-   */
-  stop(): void;
-}
 
 /**
  * The general logic of counters may imply TWO different looping constructs:
@@ -55,7 +22,7 @@ interface ICounter {
  * CostlyCounter and NrCounter use a separate metrics "loop" made of alternate
  * setTimeout()/setImmediate() jumps running around the NodeJS event loop.
  */
-class CounterBase implements ICounter, IInfoSection {
+class CounterBase implements IInfoSection {
   /**
    * The latest time measurement, in nanoseconds.
    */
@@ -83,6 +50,9 @@ class CounterBase implements ICounter, IInfoSection {
     return this.getLastPoll();
   }
 
+  /**
+   * Describe the contents returned by getLastPoll().
+   */
   public getDescription(): IInfoDescription {
     return {
       lastNSec: { label: "The last time the loop was polled, in nanoseconds", type: "NanoTs" },
@@ -90,14 +60,21 @@ class CounterBase implements ICounter, IInfoSection {
   }
 
   /**
-   * @inheritDoc
+   * Retrieve the latest sampled results.
+   *
+   * MAY reset some information: see NrCounter for an example.
    */
   public getLastPoll(): IInfoData {
     return this.lastPoll;
   }
 
   /**
-   * @inheritDoc
+   * Store the latest sampled results.
+   *
+   * @param info
+   *   The latest sampled results.
+   *
+   * This method is only meant for internal or test use.
    */
   public setLastPoll(info: IInfoData): void {
     this.lastPoll = info;
@@ -156,6 +133,5 @@ class CounterBase implements ICounter, IInfoSection {
 
 export {
   CounterBase,
-  ICounter,
   PollResult,
 };

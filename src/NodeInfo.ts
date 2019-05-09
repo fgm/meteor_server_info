@@ -6,7 +6,7 @@ import CpuUsageNormalized = NodeJS.CpuUsage;
 import MemoryUsage = NodeJS.MemoryUsage;
 import Process = NodeJS.Process;
 
-import {ICounter} from "./NodeCounter/CounterBase";
+import {CounterBase} from "./NodeCounter/CounterBase";
 import {IInfoData, IInfoDescription, IInfoSection} from "./types";
 
 interface INodeInfoData extends IInfoData {
@@ -35,7 +35,7 @@ class NodeInfo implements IInfoSection {
    *
    * @constructor
    */
-  constructor(protected process: Process, protected counter?: ICounter) {
+  constructor(protected process: Process, protected counter?: CounterBase) {
     this.info = {
       cpuSystem:    0,
       cpuUser:      0,
@@ -109,7 +109,7 @@ class NodeInfo implements IInfoSection {
       ramRss:       ram.rss,
     };
     if (typeof this.counter !== "undefined") {
-      result = { ...result, ...this.counter.getLastPoll()};
+      result = { ...result, ...this.counter.getInfo()};
     }
     return result;
   }

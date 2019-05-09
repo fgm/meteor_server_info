@@ -4,11 +4,11 @@ import Timeout = NodeJS.Timeout;
 
 import "process";
 
-import {ICounter} from "../../src/NodeCounter/CounterBase";
+import {CounterBase} from "../../src/NodeCounter/CounterBase";
 import {INodeInfoData, NodeInfo} from "../../src/NodeInfo";
 import {IDone, IInfoData, IInfoDescription} from "../../src/types";
 
-class MockCounter implements ICounter {
+class MockCounter extends CounterBase {
   public started: boolean = false;
   protected info: IInfoData = {};
 
@@ -37,7 +37,7 @@ class MockCounter implements ICounter {
  * These tests run on node 8.4, to process.hrtime.bigint() is not available yet.
  */
 function testNodeInfo() {
-  function getTestingNodeCollector(counter?: ICounter): NodeInfo {
+  function getTestingNodeCollector(counter?: CounterBase): NodeInfo {
     const mockProcess: any = {
       _cpu: {
         system: 1,

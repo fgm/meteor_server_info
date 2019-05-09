@@ -10,6 +10,7 @@
   },
   "description": "A NPM version of the Atmosphere percolate:meteor_server_info package.",
   "dependencies": {
+    "event-loop-stats": "basti1302/event-loop-stats#detect-synchronous-blocks",
     "gc-stats": "dainis/node-gcstats#master",
     "sprintf-js": "^1.1.2"
   },
@@ -71,5 +72,5 @@
     "ts-lint-tests": "tslint __tests__/**/*"
   },
   "typings": "lib/index.d.ts",
-  "version": "1.2.4"
+  "version": "1.2.5"
 }

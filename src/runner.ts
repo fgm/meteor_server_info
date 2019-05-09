@@ -1,14 +1,22 @@
+/* This file is a dev-only CLI tool: allow console.log */
+
+/* tslint:disable:no-console */
+
+// NodeJS.
 import {createHash} from "crypto";
 import fs from "fs";
-
 import {argv, argv0, exit, hrtime, pid} from "process";
+import ErrnoException = NodeJS.ErrnoException;
 
+// Node modules.
+import { sense } from "event-loop-stats";
+
+// Module imports.
 import {CheapCounter} from "./NodeCounter/CheapCounter";
 import {CostlyCounter} from "./NodeCounter/CostlyCounter";
 import {CounterBase} from "./NodeCounter/CounterBase";
 import {NrCounter} from "./NodeCounter/NrCounter";
 import {LogFunction, timingLog} from "./types";
-import ErrnoException = NodeJS.ErrnoException;
 
 // ---- Tools ------------------------------------------------------------------
 
@@ -117,7 +125,15 @@ switch (type) {
     setInterval(() => {
       log("Max CPU time per tick: %6.2f", counter.counterReset());
     }, 2000);
+    break;
 
+  case 3:
+    log("Testing with event-loop-stats");
+    sense();
+    setInterval(() => null, 199);
+    setInterval(() => console.log(sense()), 1000);
+    setTimeout(read, 3000);
+    break;
 }
 
 setTimeout(() => {
@@ -127,4 +143,4 @@ setTimeout(() => {
 
 export {
   milliwait,
-  };
+};

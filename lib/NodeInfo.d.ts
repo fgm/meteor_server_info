@@ -5,7 +5,7 @@ import CpuUsage = NodeJS.CpuUsage;
  */
 import CpuUsageNormalized = NodeJS.CpuUsage;
 import Process = NodeJS.Process;
-import { ICounter } from "./NodeCounter/CounterBase";
+import { CounterBase } from "./NodeCounter/CounterBase";
 import { IInfoData, IInfoDescription, IInfoSection } from "./types";
 interface INodeInfoData extends IInfoData {
     cpuSystem: number;
@@ -20,7 +20,7 @@ interface INodeInfoData extends IInfoData {
  */
 declare class NodeInfo implements IInfoSection {
     protected process: Process;
-    protected counter?: ICounter | undefined;
+    protected counter?: CounterBase | undefined;
     protected info: INodeInfoData;
     protected latestCpu: CpuUsage;
     protected latestPoll: number;
@@ -32,7 +32,7 @@ declare class NodeInfo implements IInfoSection {
      *
      * @constructor
      */
-    constructor(process: Process, counter?: ICounter | undefined);
+    constructor(process: Process, counter?: CounterBase | undefined);
     /**
      * Describe the metrics provided by this service.
      *
