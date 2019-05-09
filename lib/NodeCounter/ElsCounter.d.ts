@@ -5,6 +5,12 @@ import { CounterBase, PollResult } from "./CounterBase";
 /**
  *
  * Based on the native libuv hook usage in event-loop-stats.
+ *
+ * Unlike CostlyCounter and NrCounter, its cost remains very low, meaning it is
+ * poised to replace them in future versions, starting with 1.3 at the latest.
+ *
+ * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes less than
+ *   0.5% CPU load, unlike the 5%-8% of the userland counters it replaces.
  */
 declare class ElsCounter extends CounterBase {
     protected keep: boolean;

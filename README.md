@@ -134,7 +134,11 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 * 1.2.5
   * Native event loop metrics from package [event-loop-stats](https://github.com/bripkens/event-loop-stats)
-    as a more efficient alternative to the userland Counter classes.
+    as a more efficient alternative to CostlyCounter and NrCounter.
+  * As a consequence, those are now deprecated and will be removed no later than
+    version 1.3.
+  * CheapCounter metrics now return a high-resolution duration instead of a struct.
+  * Dev API: interface ICounter removed,
 * 1.2.4
   * Same as 1.2.3, but also working on Meteor 1.8.1
   * Session info are no longer null on Meteor 1.8.1

@@ -110,11 +110,11 @@ class ServerInfo {
       ? CounterFactory.create(this.settings.eventLoopStrategy, log)
       : undefined;
     this.sections = {
-      gc:          new NodeGcInfo(),
-      mongo:       new MongoInfo(this.mongoInternals),
-      process:     new NodeInfo(process, counter),
-      sessions:    new SessionInfo(this.meteor.server.sessions),
-      sockets:     new SocketInfo(this.meteor.server.stream_server.open_sockets),
+      gc:       new NodeGcInfo(),
+      mongo:    new MongoInfo(this.mongoInternals),
+      process:  new NodeInfo(process, counter),
+      sessions: new SessionInfo(this.meteor.server.sessions),
+      sockets:  new SocketInfo(this.meteor.server.stream_server.open_sockets),
     };
   }
 
