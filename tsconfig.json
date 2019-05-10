@@ -18,7 +18,7 @@
     // "declarationMap": true,
     "sourceMap": true,
     // "outFile": "./",                       /* Concatenate and emit output to single file. */
-    "outDir": "./lib",
+    "outDir": "./build",                   /* build to a temporary place to avoid fast lib switch afterwards */
     //"rootDir": "./src",
     // "composite": true,                     /* Enable project compilation */
     "removeComments": false,

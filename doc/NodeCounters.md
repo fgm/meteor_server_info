@@ -1,11 +1,11 @@
 # NodeCounter
 ## Per-counter
-### Cheap
+### Cheap (v1.2.1-v1.2.5)
 
 1. loopDelay: approximate duration of average EL duration during the last 1000 msec
   -> use ELS, better accuracy, not more expensive
 
-### Costly
+### Costly (v1.2.1-v1.2.5)
 
 1. clockMsec: Milliseconds since last polling
 2. diffMsec: Difference between actual and expected milliseconds since last polling
@@ -17,7 +17,7 @@
 7. ticksPerSec:Ticks per second
   -> same as NR tickerPerSec: use it
 
-### NR
+### NR (since v1.2.1, deprecated)
 
 1. cpuPerSecond: CPU milliseconds used by process during last quasi-second.
 2. cpuPerTickAvg: Average CPU milliseconds used by process per tick during last quasi-second (= 1./4.)
@@ -28,7 +28,7 @@
   -> use ELS, same accuracy, way cheaper
 7. ticksPerSec:Average ticks per second during last quasi-second.
 
-### ELS
+### ELS (since v1.2.5)
 
 1. loopCount: Number of main loop iterations during last sensing, from ELS.
 2. loopDelay: Estimated current average event main loop duration, in msec.

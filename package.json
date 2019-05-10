@@ -66,7 +66,7 @@
     "test-compile": "time -p tsc",
     "test-integration": "meteor npm run test-compile && time -p jest --detectOpenHandles            __tests__/integration/test.ts",
     "test-unit": "       meteor npm run test-compile && time -p jest --detectOpenHandles            __tests__/unit/test.ts",
-    "ts-compile": "rm -fr lib src/*.js src/*/*.js; tsc --version; tsc -p tsconfig.json",
+    "ts-compile": "rm -fr build/* src/*.js src/*/*.js; tsc --version; tsc -p tsconfig.json; rm -fr lib; mv build lib",
     "ts-compile-tests": "rm -fr lib src/*.js src/*/*.js; tsc --version; tsc -p tsconfig_test.json",
     "ts-lint": "tslint -p tsconfig.json",
     "ts-lint-tests": "tslint __tests__/**/*"

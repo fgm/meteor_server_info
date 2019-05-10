@@ -140,7 +140,7 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 * 1.2.6
   * ElsCounter now includes a TickCountPerSecond building an average between
     fetches, and reset on each fetch.
-  * BC break: Removed CheapCounter and CostlyCounter, superseded by ElsCounter
+  * BC break: Removed CheapCounter and CostlyCounter, entirely superseded by ElsCounter
   * Garbage collection now uses gc-stats 1.3.0 stable version.
 * 1.2.5
   * Native event loop metrics from package [event-loop-stats](https://github.com/bripkens/event-loop-stats)

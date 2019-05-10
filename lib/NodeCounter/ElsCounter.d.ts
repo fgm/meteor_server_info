@@ -1,20 +1,44 @@
 /// <reference types="node" />
+import CpuUsage = NodeJS.CpuUsage;
 import Timeout = NodeJS.Timeout;
-import { IInfoData, IInfoDescription, LogFunction } from "../types";
+import { IInfoData, IInfoDescription, LogFunction, NanoTs } from "../types";
 import { CounterBase, PollResult } from "./CounterBase";
 /**
  *
  * Based on the native libuv hook usage in event-loop-stats.
  *
- * Unlike CostlyCounter and NrCounter, its cost remains very low, meaning it is
- * poised to replace them in future versions, starting with 1.3 at the latest.
+ * Unlike the earlier userland CostlyCounter and NrCounter, its cost remains
+ * very low, which is why it replaced them in v1.3.0.
  *
  * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes less than
- *   0.5% CPU load, unlike the 5%-8% of the userland counters it replaces.
+ * 0.05% CPU load, unlike the 5%-8% of the userland counters it replaces.
+ *
+ * For this counter, CpuUsage is normalized to the sum of user and system usage,
+ * as in the ps(1) command "time" values.
  */
 declare class ElsCounter extends CounterBase {
     protected keep: boolean;
     protected busterTimer?: Timeout;
+    /**
+     * Maintained separately from regular polls to be reset on read.
+     */
+    protected lastFetchCpuUsage: number;
+    /**
+     * Maintained separately from regular polls to be reset on read.
+     */
+    protected cpuUsageMax: number;
+    /**
+     * Maintained separately from regular polls to be reset on read.
+     */
+    protected cpuUsagePrev: CpuUsage;
+    /**
+     * Maintained separately from regular polls to be reset on read.
+     */
+    protected lastFetchTs: NanoTs;
+    /**
+     * Maintained separately from regular polls to be reset on read.
+     */
+    protected loopCountSinceLastFetch: number;
     /**
      * Maintained separately from regular polls to be reset on read.
      */
@@ -37,6 +61,8 @@ declare class ElsCounter extends CounterBase {
      *   Both since last call to counterReset().
      */
     counterReset(): {
+        cpuUsageMax: number;
+        loopCountPerSecSinceLastFetch: number;
         tickLagMax: number;
     };
     /**
