@@ -1,5 +1,8 @@
+/build/
+/coverage
 node_modules/
-out/
-package-lock.json
-yarn.lock
-yarn-errog.log
+/out/
+/package-lock.json
+/random
+/yarn.lock
+/yarn-errog.log
