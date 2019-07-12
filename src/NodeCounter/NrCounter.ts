@@ -46,7 +46,7 @@ class NrCounter extends CounterBase {
   /**
    * Maintained separately from regular polls to be reset on read.
    */
-  protected tickLagMax: number = 0;
+  protected loopLagMaxMsecSinceLastFetch: number = 0;
 
   /**
    * The latest tick count.
@@ -78,9 +78,9 @@ class NrCounter extends CounterBase {
   public counterReset() {
     const max = {
       cpuPerTickMax: this.cpuPerTickMax,
-      tickLagMax: this.tickLagMax,
+      loopLagMaxMsecSinceLastFetch: this.loopLagMaxMsecSinceLastFetch,
     };
-    this.tickLagMax = 0;
+    this.loopLagMaxMsecSinceLastFetch = 0;
     this.cpuPerTickMax = 0;
     return max;
   }
@@ -103,16 +103,16 @@ class NrCounter extends CounterBase {
         label: "Maximum of CPU milliseconds used by process since last fetch, not last quasi-second.",
         type: numberTypeName,
       },
+      loopLagMaxMsecSinceLastFetch: {
+        label: "Maximum loop duration deviation from 1 msec (in msec) since last fetch, not last quasi-second.",
+        type: numberTypeName,
+      },
       tickCount: {
         label: "Exact tick count during last quasi-second.",
         type: numberTypeName,
       },
       tickLagAvg: {
         label: "Average tick duration deviation from 1 msec (in msec) during last quasi-second.",
-        type: numberTypeName,
-      },
-      tickLagMax: {
-        label: "Maximum tick duration deviation from 1 msec (in msec) since last fetch, not last quasi-second.",
         type: numberTypeName,
       },
       ticksPerSec: {
@@ -239,8 +239,8 @@ class NrCounter extends CounterBase {
     const clockPrev = this.latestTickTimerNanoTS;
     // Ticks are expected to happen every 1/CounterBase seconds = 1 msec.
     const tickLag = NanoTs.forNow().sub(clockPrev).toMsec() - 1;
-    if (Math.abs(tickLag) > Math.abs(this.tickLagMax)) {
-      this.tickLagMax = tickLag;
+    if (Math.abs(tickLag) > Math.abs(this.loopLagMaxMsecSinceLastFetch)) {
+      this.loopLagMaxMsecSinceLastFetch = tickLag;
     }
     this.latestTickTimerNanoTS = NanoTs.forNow();
 

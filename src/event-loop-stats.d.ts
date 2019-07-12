@@ -1,4 +1,4 @@
-declare module 'event-loop-stats' {
+declare module "event-loop-stats" {
 
   interface IEventStats {
     max: number,

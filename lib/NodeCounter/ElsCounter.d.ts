@@ -26,7 +26,7 @@ declare class ElsCounter extends CounterBase {
     /**
      * Maintained separately from regular polls to be reset on read.
      */
-    protected cpuUsageMax: number;
+    protected cpuUsageMaxSinceLastFetch: number;
     /**
      * Maintained separately from regular polls to be reset on read.
      */
@@ -42,7 +42,7 @@ declare class ElsCounter extends CounterBase {
     /**
      * Maintained separately from regular polls to be reset on read.
      */
-    protected tickLagMax: number;
+    protected loopLagMaxMsecSinceLastFetch: number;
     /**
      * @param keep
      *   Keep the event loop running even if only this counter remains.
@@ -51,7 +51,7 @@ declare class ElsCounter extends CounterBase {
      */
     constructor(keep?: boolean, log?: LogFunction);
     /**
-     * Resetting tickLagMax and return its value.
+     * Resetting loopLagMaxMsecSinceLastFetch and return its value.
      *
      * This method is only public for tests: it is not meant for external use.
      *
@@ -61,9 +61,9 @@ declare class ElsCounter extends CounterBase {
      *   Both since last call to counterReset().
      */
     counterReset(): {
-        cpuUsageMax: number;
+        cpuUsageMaxSinceLastFetch: number;
         loopCountPerSecSinceLastFetch: number;
-        tickLagMax: number;
+        loopLagMaxMsecSinceLastFetch: number;
     };
     /**
      * @inheritDoc

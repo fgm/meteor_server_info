@@ -138,10 +138,13 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 ## Changelog
 
 * 1.2.6
-  * ElsCounter now includes a TickCountPerSecond building an average between
-    fetches, and reset on each fetch.
+  * ElsCounter now includes a LoopCountPerSecondSinceLastFetch building an average
+    between fetches, and reset on each fetch.
   * BC break: Removed CheapCounter and CostlyCounter, entirely superseded by ElsCounter
-  * Garbage collection now uses gc-stats 1.3.0 stable version.
+  * Garbage collection now uses gc-stats 1.4.0 stable version.
+  * tickLagMax renamed to loopLagMaxMsecSinceLastFetch
+  * New `doc/NodeCounters.md` detailing the rationale for the changes since 1.2.5.
+  * TypeScript 3.5, Node 12 types, other minor dependency updates.
 * 1.2.5
   * Native event loop metrics from package [event-loop-stats](https://github.com/bripkens/event-loop-stats)
     as a more efficient alternative to CostlyCounter and NrCounter.

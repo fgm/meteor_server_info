@@ -36,7 +36,7 @@ declare class NrCounter extends CounterBase {
     /**
      * Maintained separately from regular polls to be reset on read.
      */
-    protected tickLagMax: number;
+    protected loopLagMaxMsecSinceLastFetch: number;
     /**
      * The latest tick count.
      */
@@ -58,7 +58,7 @@ declare class NrCounter extends CounterBase {
      */
     counterReset(): {
         cpuPerTickMax: number;
-        tickLagMax: number;
+        loopLagMaxMsecSinceLastFetch: number;
     };
     /**
      * @inheritDoc
