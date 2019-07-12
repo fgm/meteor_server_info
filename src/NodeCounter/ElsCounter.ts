@@ -1,5 +1,5 @@
+import CpuUsage = NodeJS.CpuUsage;
 import Timeout = NodeJS.Timeout;
-
 import {IEventStats, sense} from "event-loop-stats";
 
 import {
@@ -18,11 +18,14 @@ const BUSTER_LAP = 100;
  *
  * Based on the native libuv hook usage in event-loop-stats.
  *
- * Unlike CostlyCounter and NrCounter, its cost remains very low, meaning it is
- * poised to replace them in future versions, starting with 1.3 at the latest.
+ * Unlike the earlier userland CostlyCounter and NrCounter, its cost remains
+ * very low, which is why it replaced them in v1.3.0.
  *
  * On an "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz", it causes less than
- *   0.5% CPU load, unlike the 5%-8% of the userland counters it replaces.
+ * 0.05% CPU load, unlike the 5%-8% of the userland counters it replaces.
+ *
+ * For this counter, CpuUsage is normalized to the sum of user and system usage,
+ * as in the ps(1) command "time" values.
  */
 class ElsCounter extends CounterBase {
 
@@ -32,7 +35,32 @@ class ElsCounter extends CounterBase {
   /**
    * Maintained separately from regular polls to be reset on read.
    */
-  protected tickLagMax: number = 0;
+  protected lastFetchCpuUsage: number = 0;
+
+  /**
+   * Maintained separately from regular polls to be reset on read.
+   */
+  protected cpuUsageMaxSinceLastFetch: number = 0;
+
+  /**
+   * Maintained separately from regular polls to be reset on read.
+   */
+  protected cpuUsagePrev: CpuUsage;
+
+  /**
+   * Maintained separately from regular polls to be reset on read.
+   */
+  protected lastFetchTs: NanoTs = NanoTs.forNow();
+
+  /**
+   * Maintained separately from regular polls to be reset on read.
+   */
+  protected loopCountSinceLastFetch: number = 0;
+
+  /**
+   * Maintained separately from regular polls to be reset on read.
+   */
+  protected loopLagMaxMsecSinceLastFetch: number = 0;
 
   /**
    * @param keep
@@ -42,11 +70,12 @@ class ElsCounter extends CounterBase {
    */
   constructor(protected keep: boolean = true, log: LogFunction = nullLogger) {
     super(log);
+    this.cpuUsagePrev = process.cpuUsage();
     this.keep = keep;
   }
 
   /**
-   * Resetting tickLagMax and return its value.
+   * Resetting loopLagMaxMsecSinceLastFetch and return its value.
    *
    * This method is only public for tests: it is not meant for external use.
    *
@@ -56,10 +85,20 @@ class ElsCounter extends CounterBase {
    *   Both since last call to counterReset().
    */
   public counterReset() {
+    const now = NanoTs.forNow();
     const max = {
-      tickLagMax: this.tickLagMax,
+      cpuUsageMaxSinceLastFetch: this.cpuUsageMaxSinceLastFetch,
+      loopCountPerSecSinceLastFetch: this.loopCountSinceLastFetch / ((now.toMsec() - this.lastFetchTs.toMsec()) / 1E3),
+      loopLagMaxMsecSinceLastFetch: this.loopLagMaxMsecSinceLastFetch,
     };
-    this.tickLagMax = 0;
+
+    this.cpuUsagePrev = process.cpuUsage();
+    this.cpuUsageMaxSinceLastFetch = 0;
+    this.lastFetchCpuUsage = 0;
+
+    this.lastFetchTs = now;
+    this.loopCountSinceLastFetch = 0;
+    this.loopLagMaxMsecSinceLastFetch = 0;
     return max;
   }
 
@@ -68,13 +107,17 @@ class ElsCounter extends CounterBase {
    */
   public getDescription(): IInfoDescription {
     const numberTypeName = "number";
-    const description = {
+    return {
+      cpuUsageMaxSinceLastFetch: {
+        label: "Maximum user+system CPU usage percentage per sensing, since last fetch, from ELS.",
+        type: numberTypeName,
+      },
       loopCount: {
         label: "Number of main loop iterations during last sensing, from ELS.",
         type: numberTypeName,
       },
-      loopDelay: {
-        label: "Estimated current average event main loop duration, in msec.",
+      loopCountPerSecSinceLastFetch: {
+        label: "Number of main loop iterations per second since last fetch, averaged from ELS.",
         type: numberTypeName,
       },
       loopDelayMaxMsec: {
@@ -85,17 +128,19 @@ class ElsCounter extends CounterBase {
         label: "Minimum main loop duration, in msec during last sensing, from ELS.",
         type: numberTypeName,
       },
+      loopDelayMsec: {
+        label: "Estimated current average event main loop duration, in msec.",
+        type: numberTypeName,
+      },
       loopDelayTotalMsec: {
         label: "Total main loop delay, in msec during last sensing, from ELS.",
         type: numberTypeName,
       },
-      tickLagMax: {
+      loopLagMaxMsecSinceLastFetch: {
         label: "Maximum tick duration deviation from 1 msec (in msec) since last fetch, not last sensing.",
         type: numberTypeName,
       },
     };
-
-    return description;
   }
 
   /**
@@ -104,7 +149,7 @@ class ElsCounter extends CounterBase {
   public getInfo(): IInfoData {
     const poll: IInfoData = {
       ...this.getLastPoll(),
-      // Max values are collected in real time, not by polling.
+      // Max and count values are collected in real time, not by polling.
       ...this.counterReset(),
     };
 
@@ -125,7 +170,7 @@ class ElsCounter extends CounterBase {
     const poll = this.lastPoll;
 
     // The value in .seconds is known to be a small int.
-    poll.loopDelay = (poll.loopDelay as NanoTs).seconds + (poll.loopDelay as NanoTs).nanosec / 1E9;
+    poll.loopDelayMsec = (poll.loopDelayMsec as NanoTs).seconds + (poll.loopDelayMsec as NanoTs).nanosec / 1E9;
     return poll;
   }
 
@@ -135,13 +180,14 @@ class ElsCounter extends CounterBase {
   public start(): NodeJS.Timeout {
     this.setLastPoll({
       loopCount:          0,
-      loopDelay:          new NanoTs(0, 0),
       loopDelayMaxMsec:   0,
       loopDelayMinMsec:   0,
+      loopDelayMsec:      new NanoTs(0, 0),
       loopDelayTotalMsec: 0,
     });
 
     const timer = super.start();
+    this.lastFetchTs = NanoTs.forNow();
     this.busterTimer = setInterval(() => (null), BUSTER_LAP);
     if (!this.keep) {
       // Don't keep the event loop running just for us.
@@ -182,17 +228,26 @@ class ElsCounter extends CounterBase {
 
     this.setLastPoll({
       loopCount:          sensed.num,
-      loopDelay:          actualLapNanoTs,
       loopDelayMaxMsec:   sensed.max,
       loopDelayMinMsec:   sensed.min,
+      loopDelayMsec:      actualLapNanoTs,
       loopDelayTotalMsec: sensed.sum,
     });
 
+    const usage = process.cpuUsage();
+    const usageDiff = process.cpuUsage(this.cpuUsagePrev);
+    this.cpuUsagePrev = usage;
+    const usageRatio: number = ((usageDiff.user + usageDiff.system) / 1E6) / (nsec.sub(prev).toMsec() / 1E3);
+    if (usageRatio > this.cpuUsageMaxSinceLastFetch) {
+      this.cpuUsageMaxSinceLastFetch = usageRatio;
+    }
+
     // Note that sensed.max is a duration, defaulting to 1. Lag is the
     // difference from that nominal deviation, so it has to be deducted.
-    if (sensed.max - 1 > this.tickLagMax) {
-      this.tickLagMax = sensed.max - 1;
+    if (sensed.max - 1 > this.loopLagMaxMsecSinceLastFetch) {
+      this.loopLagMaxMsecSinceLastFetch = sensed.max - 1;
     }
+    this.loopCountSinceLastFetch += sensed.num;
 
     return [prev, nsec];
   }

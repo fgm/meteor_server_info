@@ -122,7 +122,7 @@ function testSessionInfo() {
     for (const collector of getTestingSessionCollector()) {
       const info: ISessionInfoData = collector.getInfo();
       const nDocuments = info.nDocuments;
-      const expectations = {
+      const expectations: {[index: string]: any} = {
         collection01: 4, // 2 on sess1 + 2 on sess2
         collection02: 1,
         collection11: 2, // 1 on sess1 + 1 on sess2
@@ -148,7 +148,7 @@ function testSessionInfo() {
     for (const collector of getTestingSessionCollector()) {
       const info: ISessionInfoData = collector.getInfo();
       const nSubs = info.nSubs;
-      const expectations = {
+      const expectations: {[index: string]: any} = {
         sub0: 1,
         sub1: 2,
         sub2: 1,

@@ -12,8 +12,6 @@ import ErrnoException = NodeJS.ErrnoException;
 import { sense } from "event-loop-stats";
 
 // Module imports.
-import {CheapCounter} from "./NodeCounter/CheapCounter";
-import {CostlyCounter} from "./NodeCounter/CostlyCounter";
 import {CounterBase} from "./NodeCounter/CounterBase";
 import {NrCounter} from "./NodeCounter/NrCounter";
 import {LogFunction, timingLog} from "./types";
@@ -65,7 +63,7 @@ function read(file = "random") {
 }
 
 /**
- * Use an voluntarily inefficient implementation to lock CPU during the event loop.
+ * Use an voluntarily terrible implementation to lock CPU during the event loop.
  *
  * @param n
  */
@@ -80,9 +78,9 @@ function badFibonacci(n: number): number {
 let log: LogFunction = timingLog;
 if (argv.length < 2 || argv.length > 3) {
   const path = argv[1].split("/").pop();
-  log(`Syntax: ${argv0} ${path} [<use costly ?>]
+  log(`Syntax: ${argv0} ${path} [<use collector ?>]
 
-Without a trueish value for the optional <use costly ?> argument, ${path} will use the cheap method.
+Without a trueish value for the optional <use collector?> argument, ${path} will use the ELS collector.
 
 In both cases it will read a ./random file, which could be generated using e.g.:
   dd if=/dev/urandom of=random bs=1048576 count=1024`);
@@ -101,14 +99,10 @@ let counter: any;
 
 switch (type) {
   default:
-    log("Testing with cheap counter");
-    (counter = new CheapCounter(true, log)).start();
-    setTimeout(read, 3000);
-    break;
-
-  case 1:
-    log("Testing with costly counter");
-    (counter = new CostlyCounter(log)).start();
+    log("Testing with event-loop-stats");
+    sense();
+    setInterval(() => null, 199);
+    setInterval(() => console.log(sense()), 1000);
     setTimeout(read, 3000);
     break;
 
@@ -125,14 +119,6 @@ switch (type) {
     setInterval(() => {
       log("Max CPU time per tick: %6.2f", counter.counterReset());
     }, 2000);
-    break;
-
-  case 3:
-    log("Testing with event-loop-stats");
-    sense();
-    setInterval(() => null, 199);
-    setInterval(() => console.log(sense()), 1000);
-    setTimeout(read, 3000);
     break;
 }
 

@@ -1,7 +1,7 @@
 # Meteor server info
 
 - A NPM version (derivative work) of [percolate:server-info]
-- Rewritten in TypeScript 3 for Meteor 1.6-1.8
+- Rewritten in TypeScript 3 for Meteor 1.6-1.8.1
 - Without the AWS-specific and extra sections, not relevant for most usages.
 - With 3 original Node.JS EventLoop metrics collectors (see "Configuration")
 
@@ -51,11 +51,11 @@ that case:
 
 - do NOT add it to your `package.json`
 - clone it in the `import/server/` directory of your project,
-- import its dependencies with `yarn`
+- import its dependencies with `meteor yarn`
 - build documentation with `yarn && yarn doc`. The documentation will be built
   in the `out/` directory.
-- compile with `yarn ts-compile`, lint with `yarn ts-lint` and run tests with
-  `yarn test-ci`
+- compile with `meteor yarn ts-compile`, lint with `meteor yarn ts-lint` and
+  run tests with `meteor yarn test-ci`
 
 To use your development version of the module, import it locally in your
 application code. You will have access to `serverInfo` from `meteor shell`.
@@ -86,18 +86,22 @@ following server keys:
   Defaults to `insecure`.
 - `pass`: the password for the user account. Defaults to `secureme`.
 - `verbose`: enable console logging. Defaults to `false`.
-- `eventLoopStrategy`: the strategy to use to instrument the event loop and CPU
-  - `"cheap"`: similar to [PM2] or [pebble/event-loop-lag]; low CPU cost : expect
-    around 0.5% on 2019 hardware,
-    very limited accuracy, will usually under-estimate the actual loop latency.
-  - `"costly"`: inspired by a [Dynatrace article], a much more accurate strategy,
-    tracing each tick of the event loop ; this is much also more costly since
-    it disables the event loop "poll phase wait" optimization: expect 5% load.
-  - `"nr"`: inspired by NewRelic "CPU time per tick", a more intuitive metric,
-    built on top of the `costly` algorithm, with a small extra: expect 6% load.
+- `eventLoopStrategy`: the strategy to use to instrument the event loop and/or
+  statistical CPU usage
+  - `"els"`: a set of event-loop metrics provided by the [event-loop-stats]
+    package. Cheap and accurate, this is the recommended collector. 
+  - `"nr"`: inspired by NewRelic "CPU time per tick", an intuitive metric
+    collecting instantaneous CPU usage across ticks, based on a [Dynatrace article], 
+    tracing each tick of the event loop in JavaScript code, which makes it
+    rather costly since it disables the event loop "poll phase wait" optimization
+    to achieve accuracy: expect 8% CPU load. 
   - `false`, the event loop metrics collection is disabled, to keep costs at an
     absolute minimum like the legacy `MeteorServerInfo`.
 
+The package previously included a "cheap" collector based on the [PM2] / [pebble/event-loop-lag]
+logic, but this has been superseded by the ELS collector. 
+
+[event-loop-stats]: https://www.npmjs.com/package/event-loop-stats
 [pebble/event-loop-lag]: https://github.com/pebble/event-loop-lag
 [percolate:server-info]: https://atmospherejs.com/percolate/server-info
 [PM2]: https://github.com/keymetrics/pmx/blob/1.3/lib/default_probes/pacemaker.js
@@ -112,15 +116,16 @@ Metrics exposed by the module can easily be imported to Grafana using the `http`
 plugin and a Telegraf import. Be sure to import data from all your Meteor server
 instances, since metrics are reported per-server, not per-database.
 
-Note that since the `costly` and `nr` strategies disable the event loop poll
-phase wait optimization, the idle ticks/second rate will be around 900 and go
-lower with increased load. There is a tradeoff to be done: CPU cost vs accuracy.
+Note that since the `nr` collector disables the event loop poll phase wait
+optimization, the idle ticks/second rate will be around 900 and go lower with
+increased load. There is a tradeoff to be done: CPU cost vs accuracy.
 
-The high cost of these strategies is a consequence of the limitations of the
+The high cost of this strategy is a consequence of the limitations of the
 Node.JS event loop JavaScript API, requiring workarounds. For accurate metrics
-with lower metric acquisition cost, a binary agent is required: AppDynamics,
-Dynatrace, NewRelic and others offer this type of solution, the tradeoff in
-that case being CPU cost vs monthly SaaS cost.
+with lower metric acquisition cost, a binary agent is required, like the ELS
+collector, or commercial offerings: AppDynamics, Dynatrace, NewRelic and others
+offer this type of solution, the tradeoff in that case being CPU cost vs monthly
+SaaS cost.
 
 
 ## License
@@ -132,6 +137,14 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 ## Changelog
 
+* 1.2.6
+  * ElsCounter now includes a LoopCountPerSecondSinceLastFetch building an average
+    between fetches, and reset on each fetch.
+  * BC break: Removed CheapCounter and CostlyCounter, entirely superseded by ElsCounter
+  * Garbage collection now uses gc-stats 1.4.0 stable version.
+  * tickLagMax renamed to loopLagMaxMsecSinceLastFetch
+  * New `doc/NodeCounters.md` detailing the rationale for the changes since 1.2.5.
+  * TypeScript 3.5, Node 12 types, other minor dependency updates.
 * 1.2.5
   * Native event loop metrics from package [event-loop-stats](https://github.com/bripkens/event-loop-stats)
     as a more efficient alternative to CostlyCounter and NrCounter.
