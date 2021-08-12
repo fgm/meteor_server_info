@@ -141,6 +141,8 @@ General Public License version 3 or later (SPDX: GPL-3.0+).
 
 ## Changelog
 
+* 1.2.7
+  * Use base version of event-loop-stats now that fork has been merged.
 * 1.2.6
   * ElsCounter now includes a LoopCountPerSecondSinceLastFetch building an average
     between fetches, and reset on each fetch.
