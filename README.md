@@ -131,16 +131,24 @@ SaaS cost.
 
 ## License
 
-As the original [percolate:server-info] package was licensed under the
-permissive MIT license, this derivative work has been relicensed under the
-General Public License version 3 or later (SPDX: GPL-3.0+).
+| Information | License scan |
+|---------------------|--------------|
+| As the original [percolate:server-info] package was licensed under the permissive MIT license, this derivative work has been relicensed under the General Public License version 3 or later (SPDX: GPL-3.0+). |  [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Ffgm%2Fmeteor_server_info.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Ffgm%2Fmeteor_server_info?ref=badge_large) |
 
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Ffgm%2Fmeteor_server_info.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Ffgm%2Fmeteor_server_info?ref=badge_large)
 
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Ffgm%2Fmeteor_server_info.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Ffgm%2Fmeteor_server_info?ref=badge_large)
 
 ## Changelog
 
+* 1.3.0
+  * Meteor 2 support. Dropped 1.x support. Node 14.* required.
+  * FOSSA License scan report.
+  * No significant code changes
+  * Major dependency updates
+    * Node 12 → 14, NPM 6 → 7
+    * Jest 25, TSLint 6.1, Typedoc 0.17, Snyk 1.301 other minor dependency updates.
 * 1.2.6
   * ElsCounter now includes a LoopCountPerSecondSinceLastFetch building an average
     between fetches, and reset on each fetch.
