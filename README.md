@@ -142,9 +142,13 @@ SaaS cost.
 
 ## Changelog
 
-* 1.2.7
-  * Node 13 types, Jest 25, TSLint 6.1, Typedoc 0.17, Snyk 1.301 other minor dependency updates.
+* 1.3.0
+  * Meteor 2 support. Dropped 1.x support. Node 14.* required.
   * FOSSA License scan report.
+  * No significant code changes
+  * Major dependency updates
+    * Node 12 → 14, NPM 6 → 7
+    * Jest 25, TSLint 6.1, Typedoc 0.17, Snyk 1.301 other minor dependency updates.
 * 1.2.6
   * ElsCounter now includes a LoopCountPerSecondSinceLastFetch building an average
     between fetches, and reset on each fetch.
